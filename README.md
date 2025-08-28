@@ -72,7 +72,6 @@ Fit for products: Any products that is compatible with Postgresql using `psql` c
 
 Please refer to the [QuickStartCloud.md](tpcds_tools/QuickStartCloud.md) for more details.
 
-
 ## Supported TPC-DS Versions
 
 | Version | Date | Specification |
@@ -136,17 +135,18 @@ TPC-DS Tool Execution Process:
    - Create schemas, tables, and indexes required for TPC-DS
 5. Load data
    - Import generated datasets into the database.
-6. Single user test (Power test)
+6. Analyze tables
+   - Compute table statistics for optimal query performance
+7. Single user test (Power test)
    - Execute all 99 queries sequentially to measure single-threaded performance
-7. Single user reports
+8. Single user reports
    - Generate the result for single user test.
-8. Multi users test (Throughput test)
+9. Multi users test (Throughput test)
    - Execute multiple queries concurrently to measure system throughput capacity.
-9. Multi user reports
-   - Generate the result for multi users test.
-10. Final score
+10. Multi user reports
+    - Generate the result for multi users test.
+11. Final score
     - Generate performance metric combining power and throughput tests.
-
 
 ### TPC-DS Tools Dependencies
 
@@ -252,7 +252,10 @@ export RUN_GEN_DATA="true"       # Generate test data
 export RUN_DDL="true"            # Create database schemas/tables
 export RUN_LOAD="true"           # Load generated data
 
-# 3. Query execution
+# 3. Statistics and optimization
+export RUN_ANALYZE="true"        # Compute table statistics for query optimization
+
+# 4. Query execution
 export RUN_SQL="true"                 # Run power test queries
 export RUN_SINGLE_USER_REPORTS="true" # Upload single-user test results
 export RUN_MULTI_USER="false"         # Run throughput test queries
@@ -268,7 +271,8 @@ There are multiple steps in running the benchmark, controlled by these variables
 | `RUN_GEN_DATA`            | `true`  | Generates flat files for the benchmark in parallel on all segment nodes. Files are stored under the `${PGDATA}/dsbenchmark` directory. |
 | `RUN_INIT`                | `true`  | Sets up GUCs for the database and records segment configurations. Required after cluster reconfiguration. |
 | `RUN_DDL`                 | `true`  | Recreates schemas and tables (including external tables for loading). Set to `false` to keep existing data. |
-| `RUN_LOAD`                | `true`  | Loads data from flat files into tables and computes statistics. |
+| `RUN_LOAD`                | `true`  | Loads data from flat files into tables. |
+| `RUN_ANALYZE`             | `true`  | Computes table statistics for optimal query performance. Can be configured with parallel processes. |
 | `RUN_SQL`                 | `true`  | Runs the power test of the benchmark. |
 | `RUN_SINGLE_USER_REPORTS` | `true`  | Generate results to the database under the schema `tpcds_reports`. Required for the `RUN_SCORE` step. |
 | `RUN_MULTI_USER`          | `true`  | Runs the throughput test of the benchmark. This generates multiple query streams using `dsqgen`, which samples the database to find proper filters. For very large databases with many streams, this process can take hours just to generate the queries. |
