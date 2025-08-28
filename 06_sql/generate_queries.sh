@@ -37,7 +37,7 @@ log_time "${PWD}/dsqgen -input ${PWD}/query_templates/templates.lst -directory $
 ${PWD}/dsqgen -input ${PWD}/query_templates/templates.lst -directory ${PWD}/query_templates -dialect cloudberry -scale ${GEN_DATA_SCALE} -RNGSEED ${RNGSEED} -verbose y -output ${PWD}
 
 # Clean up previous SQL files
-rm -f ${TPC_DS_DIR}/05_sql/*.${BENCH_ROLE}.*.sql*
+rm -f ${TPC_DS_DIR}/06_sql/*.${BENCH_ROLE}.*.sql*
 
 # Process each query template
 for p in $(seq 1 99); do
@@ -57,8 +57,8 @@ for p in $(seq 1 99); do
   done
 
   # Create and populate query file
-  log_time "Creating: ${TPC_DS_DIR}/05_sql/${filename}"
-  printf "set role ${BENCH_ROLE};\nset search_path=${DB_SCHEMA_NAME},public;\n" > ${TPC_DS_DIR}/05_sql/${filename}
+  log_time "Creating: ${TPC_DS_DIR}/06_sql/${filename}"
+  printf "set role ${BENCH_ROLE};\nset search_path=${DB_SCHEMA_NAME},public;\n" > ${TPC_DS_DIR}/06_sql/${filename}
 
   # Set optimizer settings
   for o in $(cat ${TPC_DS_DIR}/01_gen_data/optimizer.txt); do
@@ -67,27 +67,27 @@ for p in $(seq 1 99); do
       optimizer=$(echo ${o} | awk -F '|' '{print $2}')
     fi
   done
-  printf "set optimizer=${optimizer};\n" >> ${TPC_DS_DIR}/05_sql/${filename}
-  printf "set statement_mem=\"${STATEMENT_MEM}\";\n" >> ${TPC_DS_DIR}/05_sql/${filename}
+  printf "set optimizer=${optimizer};\n" >> ${TPC_DS_DIR}/06_sql/${filename}
+  printf "set statement_mem=\"${STATEMENT_MEM}\";\n" >> ${TPC_DS_DIR}/06_sql/${filename}
 
   # Add vectorization setting if enabled
   if [ "${ENABLE_VECTORIZATION}" = "on" ]; then
-    printf "set vector.enable_vectorization=${ENABLE_VECTORIZATION};\n" >> ${TPC_DS_DIR}/05_sql/${filename}
+    printf "set vector.enable_vectorization=${ENABLE_VECTORIZATION};\n" >> ${TPC_DS_DIR}/06_sql/${filename}
   fi
 
   # Add EXPLAIN ANALYZE and query content
-  printf ":EXPLAIN_ANALYZE\n" >> ${TPC_DS_DIR}/05_sql/${filename}
-  sed -n ${start_position},${end_position}p ${PWD}/query_0.sql >> ${TPC_DS_DIR}/05_sql/${filename}
+  printf ":EXPLAIN_ANALYZE\n" >> ${TPC_DS_DIR}/06_sql/${filename}
+  sed -n ${start_position},${end_position}p ${PWD}/query_0.sql >> ${TPC_DS_DIR}/06_sql/${filename}
 
   # Check database if postgresql then comment out optimizer settings
   if [ "${DB_VERSION}" == "postgresql" ]; then
-    sed -i 's/^set optimizer=.*/-- &/' "${TPC_DS_DIR}/05_sql/${filename}"
-    sed -i 's/^set statement_mem=.*/-- &/' "${TPC_DS_DIR}/05_sql/${filename}"
+    sed -i 's/^set optimizer=.*/-- &/' "${TPC_DS_DIR}/06_sql/${filename}"
+    sed -i 's/^set statement_mem=.*/-- &/' "${TPC_DS_DIR}/06_sql/${filename}"
   fi
   
   query_id=$((query_id + 1))
   file_id=$((file_id + 1))
-  log_time "Completed: ${TPC_DS_DIR}/05_sql/${filename}"
+  log_time "Completed: ${TPC_DS_DIR}/06_sql/${filename}"
 done
 
 # Handle special queries that contain multiple statements
@@ -99,7 +99,7 @@ echo ""
 arr=("114.${BENCH_ROLE}.14.sql" "123.${BENCH_ROLE}.23.sql" "124.${BENCH_ROLE}.24.sql" "139.${BENCH_ROLE}.39.sql")
 
 for z in "${arr[@]}"; do
-  myfilename=${TPC_DS_DIR}/05_sql/${z}
+  myfilename=${TPC_DS_DIR}/06_sql/${z}
   log_time "Modifying: ${myfilename}"
   
   # Find position for inserting EXPLAIN_ANALYZE
