@@ -57,6 +57,7 @@ export LOAD_PARALLEL="2"
 
 ## step 05_analyze
 export RUN_ANALYZE="true"
+### How many parallel processes to analyze tables, default is 5, max is 24.
 export RUN_ANALYZE_PARALLEL="5"
 
 ## step 06_sql
