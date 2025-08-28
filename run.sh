@@ -1,7 +1,7 @@
 #/bin/bash
 
 function log_time() {
-  printf "[%s] %b\n" "$(date '+%Y-%m-%d %H:%M:%S')" "$1"
+  printf "[%s] %b\n" "$(date '+%Y-%m-%d %H:%M:%S %Z')" "$1"
 }
 export -f log_time
 
