@@ -54,10 +54,13 @@ export DROP_EXISTING_TABLES="true"
 export RUN_LOAD="true"
 ### How many parallel processes to load data, default is 2, max is 24.
 export LOAD_PARALLEL="2"
+
+## step 05_analyze
 export RUN_ANALYZE="true"
+### How many parallel processes to analyze tables, default is 5, max is 24.
 export RUN_ANALYZE_PARALLEL="5"
 
-## step 05_sql
+## step 06_sql
 export RUN_SQL="true"
 export RUN_QGEN="true"
 ## Set to true to generate queries for the TPC-DS benchmark.
@@ -68,17 +71,17 @@ export QUERY_INTERVAL="0"
 ## Set wait time between each query execution, Set to 1 if you want to stop when an error occurs
 export ON_ERROR_STOP="0"
 
-## step 06_single_user_reports
+## step 07_single_user_reports
 export RUN_SINGLE_USER_REPORTS="true"
 
-## step 07_multi_user
+## step 08_multi_user
 export RUN_MULTI_USER="false"
 export RUN_MULTI_USER_QGEN="true"
 
-## step 08_multi_user_reports
+## step 09_multi_user_reports
 export RUN_MULTI_USER_REPORTS="false"
 
-## step 09_score
+## step 10_score
 export RUN_SCORE="false"
 
 # Misc options
