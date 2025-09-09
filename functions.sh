@@ -140,6 +140,8 @@ function get_version() {
         WHEN POSITION('cloudberry' IN version) > 0 AND 
              POSITION('lightning' IN version) > 0 THEN 'lightning'
         WHEN POSITION('cloudberry' IN version) > 0 AND 
+             POSITION('hashdata enterprise 4' IN version) > 0 THEN 'hashdata_enterprise_4'
+        WHEN POSITION('cloudberry' IN version) > 0 AND 
              POSITION('synxdb' IN version) > 0 THEN 'synxdb_4'
         WHEN POSITION('cloudberry' IN version) > 0 AND
              POSITION('synxdb' IN version) = 0 AND 
