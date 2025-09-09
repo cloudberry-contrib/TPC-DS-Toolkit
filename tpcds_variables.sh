@@ -1,6 +1,10 @@
 # Environment options
+
+## ADMIN_USER should be set to the OS user that executes this toolkit
 export ADMIN_USER="gpadmin"
+## BENCH_ROLE should be set to the database user that will be used to run the benchmark
 export BENCH_ROLE="dsbench"
+## DB_SCHEMA_NAME should be set to the database schema that will be used to store the TPC-DS tables
 export DB_SCHEMA_NAME="tpcds"
  
 ## Set to "local" to run the benchmark on the COORDINATOR host or "cloud" to run the benchmark from a remote client.
@@ -8,7 +12,9 @@ export RUN_MODEL="local"
 
 ## Default port is configured via the env setting of $PGPORT for user $ADMIN_USER
 ## Configure the host/port/user to connect to the cluster running the test. Can be left empty when all variables are set for the $ADMIN_USER
-## eg. export PSQL_OPTIONS="-h 2f445c57-c838-4038-a410-50ee36f9461d.ai -p 5432"
+## Database user defined in this variable with '-U' will be the user to connect to the database, better to be the same with $BENCH_ROLE
+## Database user to run this benchmark, should have enough permissions, better to use supper user.
+## eg. export PSQL_OPTIONS="-h 2f445c57-c838-4038-a410-50ee36f9461d.ai -p 5432 -U dsbench"
 export PSQL_OPTIONS=""
 
 ## The following variables only take effect when RUN_MODEL is set to "cloud".
