@@ -164,6 +164,7 @@ if [ "${DB_CURRENT_USER}" != "${BENCH_ROLE}" ]; then
   DropRoleDenp="drop owned by ${BENCH_ROLE} cascade"
   DropRole="DROP ROLE IF EXISTS ${BENCH_ROLE}"
   CreateRole="CREATE ROLE ${BENCH_ROLE}"
+  GrantRole="GRANT ${BENCH_ROLE} TO ${DB_CURRENT_USER}"
   GrantSchemaPrivileges="GRANT ALL PRIVILEGES ON SCHEMA ${DB_SCHEMA_NAME} TO ${BENCH_ROLE}"
   GrantTablePrivileges="GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA ${DB_SCHEMA_NAME} TO ${BENCH_ROLE}"
   echo "rm -f ${PWD}/GrantTablePrivileges.sql"
@@ -184,6 +185,9 @@ if [ "${DB_CURRENT_USER}" != "${BENCH_ROLE}" ]; then
     psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${DropRoleDenp}"
     set -e
   fi
+  
+  log_time "Grant role ${BENCH_ROLE} to user ${DB_CURRENT_USER}"
+  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${GrantRole}"
   
   log_time "Grant schema privileges to role ${BENCH_ROLE}"
   psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${GrantSchemaPrivileges}"
