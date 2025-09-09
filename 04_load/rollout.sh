@@ -100,6 +100,11 @@ for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "
         table_name=$(echo "${i}" | awk -F '.' '{print $3}')
         export table_name
 
+        if [ "${TRUNCATE_TABLES}" == "true" ]; then
+            log_time "Truncate table ${DB_SCHEMA_NAME}.${table_name}"
+            psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -c "TRUNCATE TABLE ${DB_SCHEMA_NAME}.${table_name}"
+        fi
+
         if [ "${RUN_MODEL}" == "cloud" ]; then
             GEN_DATA_PATH=${CLIENT_GEN_PATH}
             tuples=0

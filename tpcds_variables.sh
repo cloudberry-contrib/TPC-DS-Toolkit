@@ -60,6 +60,8 @@ export DROP_EXISTING_TABLES="true"
 export RUN_LOAD="true"
 ### How many parallel processes to load data, default is 2, max is 24.
 export LOAD_PARALLEL="2"
+### Truncate existing tables before loading data
+export TRUNCATE_TABLES="true"
 
 ## step 05_analyze
 export RUN_ANALYZE="true"
