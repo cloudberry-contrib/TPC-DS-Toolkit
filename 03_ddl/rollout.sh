@@ -48,6 +48,10 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
       fi
     fi
 
+    if [ "${DB_VERSION}" == "hashdata_enterprise_4" ]; then
+      DISTRIBUTED_BY=""
+    fi
+
     if [ "${DB_VERSION}" == "postgresql" ]; then
       DISTRIBUTED_BY=""
       TABLE_ACCESS_METHOD=""
