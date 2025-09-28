@@ -19,11 +19,14 @@ This tool provides:
   - [Overview](#overview)
   - [Table of Contents](#table-of-contents)
   - [Quick Start](#quick-start)
+    - [Guides to run test on MPP Architecture with "local" mode](#guides-to-run-test-on-mpp-architecture-with-local-mode)
+    - [Guides to run test on Postgresql compatible database with "Cloud" mode](#guides-to-run-test-on-postgresql-compatible-database-with-cloud-mode)
   - [Supported TPC-DS Versions](#supported-tpc-ds-versions)
   - [Prerequisites](#prerequisites)
     - [Tested Products](#tested-products)
     - [Local Cluster Setup](#local-cluster-setup)
     - [Remote Client Setup](#remote-client-setup)
+    - [Introduction to TPC-DS-Toolkit Process.](#introduction-to-tpc-ds-toolkit-process)
     - [TPC-DS Tools Dependencies](#tpc-ds-tools-dependencies)
   - [Installation](#installation)
   - [Usage](#usage)
@@ -71,6 +74,7 @@ Please refer to the [QuickStartLocal.md](tpcds_tools/QuickStartLocal.md) for mor
 Fit for products: Any products that is compatible with Postgresql using `psql` clients. Including Hashdata Enterprise, SynxDB Elastic.
 
 Please refer to the [QuickStartCloud.md](tpcds_tools/QuickStartCloud.md) for more details.
+
 
 ## Supported TPC-DS Versions
 
@@ -148,6 +152,7 @@ TPC-DS Tool Execution Process:
 11. Final score
     - Generate performance metric combining power and throughput tests.
 
+
 ### TPC-DS Tools Dependencies
 
 Install the dependencies on `mdw` for compiling the `dsdgen` (data generation) and `dsqgen` (query generation) tools:
@@ -202,6 +207,9 @@ export RUN_MODEL="cloud"    # "local" or "cloud"
 export PSQL_OPTIONS="-h <host> -p <port>"
 export CLIENT_GEN_PATH="/tmp/dsbenchmark"  # Location for data generation
 export CLIENT_GEN_PARALLEL="2"             # Number of parallel data generation processes
+
+# Local mode settings
+export LOCAL_GEN_PARALLEL="1"              # Number of parallel processes on each segment for local mode
 ```
 
 ### Benchmark Options
@@ -249,16 +257,26 @@ export RUN_INIT="true"           # Initialize cluster settings
 
 # 2. Data generation and loading
 export RUN_GEN_DATA="true"       # Generate test data
+export GEN_NEW_DATA="true"       # Generate new data vs reusing existing data
 export RUN_DDL="true"            # Create database schemas/tables
+export DROP_EXISTING_TABLES="true" # Drop existing tables before creating new ones
 export RUN_LOAD="true"           # Load generated data
+export LOAD_PARALLEL="2"         # Number of parallel processes to load data (max 24)
+export TRUNCATE_TABLES="true"    # Truncate existing tables before loading data
 
 # 3. Statistics and optimization
 export RUN_ANALYZE="true"        # Compute table statistics for query optimization
+export RUN_ANALYZE_PARALLEL="5"  # Number of parallel processes for analyze (max 24)
 
 # 4. Query execution
 export RUN_SQL="true"                 # Run power test queries
+export RUN_QGEN="true"                # Generate queries for TPC-DS benchmark
+export UNIFY_QGEN_SEED="true"         # Use unified seed for query generation
+export QUERY_INTERVAL="0"             # Wait time between each query execution
+export ON_ERROR_STOP="0"              # Stop on error flag (1 to stop)
 export RUN_SINGLE_USER_REPORTS="true" # Upload single-user test results
 export RUN_MULTI_USER="false"         # Run throughput test queries
+export RUN_MULTI_USER_QGEN="true"     # Generate queries for multi-user test
 export RUN_MULTI_USER_REPORTS="false" # Upload multi-user test results
 export RUN_SCORE="false"              # Compute final benchmark score
 ```
@@ -269,15 +287,25 @@ There are multiple steps in running the benchmark, controlled by these variables
 |---------------------------|---------|-------------|
 | `RUN_COMPILE_TPCDS`       | `true`  | Compiles `dsdgen` and `dsqgen`. Usually only needs to be done once. |
 | `RUN_GEN_DATA`            | `true`  | Generates flat files for the benchmark in parallel on all segment nodes. Files are stored under the `${PGDATA}/dsbenchmark` directory. |
+| `GEN_NEW_DATA`            | `true`  | Controls whether to generate new data or reuse existing data. Only effective when `RUN_GEN_DATA` is true. |
 | `RUN_INIT`                | `true`  | Sets up GUCs for the database and records segment configurations. Required after cluster reconfiguration. |
 | `RUN_DDL`                 | `true`  | Recreates schemas and tables (including external tables for loading). Set to `false` to keep existing data. |
+| `DROP_EXISTING_TABLES`    | `true`  | Controls whether to drop existing tables before creating new ones. Only effective when `RUN_DDL` is true. |
 | `RUN_LOAD`                | `true`  | Loads data from flat files into tables. |
-| `RUN_ANALYZE`             | `true`  | Computes table statistics for optimal query performance. Can be configured with parallel processes. |
+| `LOAD_PARALLEL`           | `2`     | Number of parallel processes to load data (maximum 24). |
+| `TRUNCATE_TABLES`         | `true`  | Truncate existing tables before loading data. |
+| `RUN_ANALYZE`             | `true`  | Computes table statistics for optimal query performance. |
+| `RUN_ANALYZE_PARALLEL`    | `5`     | Number of parallel processes for analyze (maximum 24). |
 | `RUN_SQL`                 | `true`  | Runs the power test of the benchmark. |
+| `RUN_QGEN`                | `true`  | Generate queries for the TPC-DS benchmark. |
+| `UNIFY_QGEN_SEED`         | `true`  | Use unified seed for query generation. |
+| `QUERY_INTERVAL`          | `0`     | Wait time between each query execution. Set to 1 if you want to stop when an error occurs. |
+| `ON_ERROR_STOP`           | `0`     | Stop on error flag (1 to stop). |
 | `RUN_SINGLE_USER_REPORTS` | `true`  | Generate results to the database under the schema `tpcds_reports`. Required for the `RUN_SCORE` step. |
-| `RUN_MULTI_USER`          | `true`  | Runs the throughput test of the benchmark. This generates multiple query streams using `dsqgen`, which samples the database to find proper filters. For very large databases with many streams, this process can take hours just to generate the queries. |
-| `RUN_MULTI_USER_REPORTS`  | `true`  | Generate multi-user results to the database. |
-| `RUN_SCORE`               | `true`  | Computes the final `QphDS` score based on the benchmark standard. |
+| `RUN_MULTI_USER`          | `false` | Runs the throughput test of the benchmark. This generates multiple query streams using `dsqgen`, which samples the database to find proper filters. For very large databases with many streams, this process can take hours just to generate the queries. |
+| `RUN_MULTI_USER_QGEN`     | `true`  | Generate queries for multi-user test. |
+| `RUN_MULTI_USER_REPORTS`  | `false` | Generate multi-user results to the database. |
+| `RUN_SCORE`               | `false` | Computes the final `QphDS` score based on the benchmark standard. |
 
 **WARNING**: TPC-DS does not rely on the log folder to determine which steps to run or skip. It will only run the steps that are explicitly set to `true` in the `tpcds_variables.sh` file. If any necessary step is set to `false` but has never been executed before, the script will abort when it tries to access data that doesn't exist.
 
@@ -418,6 +446,7 @@ Affected queries: 64, 34, and 71.
    - Enable vectorization if supported
    - Use appropriate storage options for your workload
    - Consider partitioning for large tables
+   - Adjust database parameters as referred to: [tpcds_set_gucs](tpcds_tools/tpcds_set_gucs.sh)
 
 ### Logs and Diagnostics
 
