@@ -16,10 +16,18 @@ env_file=""
 
 if [ "$DB_VERSION" = "synxdb_4" ]; then
     env_file="${GPHOME}/cluster_env.sh"
+    if [ -z ${env_file} ]; then
+      env_file="${GPHOME}/cloudberry-env.sh"
+    fi
 elif [ "$DB_VERSION" = "synxdb_2" ]; then
     env_file="${GPHOME}/synxdb_path.sh"
 else
     env_file="${GPHOME}/greenplum_path.sh"
+fi
+
+# Check if env_file exists, if not set to fallback
+if [ ! -f "$env_file" ]; then
+    env_file="${GPHOME}/cloudberry-env.sh"
 fi
 
 function copy_script() {
