@@ -12,22 +12,42 @@ init_log ${step}
 
 filter="gpdb"
 
+CLOUDBERRY_BINARY_PATH=${GPHOME}
+
 env_file=""
 
 if [ "$DB_VERSION" = "synxdb_4" ]; then
-    env_file="${GPHOME}/cluster_env.sh"
-    if [ -z ${env_file} ]; then
-      env_file="${GPHOME}/cloudberry-env.sh"
-    fi
+    env_file="${CLOUDBERRY_BINARY_PATH}/cloudberry-env.sh"
 elif [ "$DB_VERSION" = "synxdb_2" ]; then
-    env_file="${GPHOME}/synxdb_path.sh"
+    env_file="${CLOUDBERRY_BINARY_PATH}/synxdb_path.sh"
 else
-    env_file="${GPHOME}/greenplum_path.sh"
+    env_file="${CLOUDBERRY_BINARY_PATH}/greenplum_path.sh"
 fi
 
-# Check if env_file exists, if not set to fallback
-if [ ! -f "$env_file" ]; then
-    env_file="${GPHOME}/cloudberry-env.sh"
+if [ ! -f "${env_file}" ]; then
+    log_time "Environment file ${env_file} not found, searching for alternative configuration files..."
+    
+    config_files=("greenplum_path.sh" "cluster_env.sh" "synxdb_path.sh" "cloudberry-env.sh")
+    found_config=""
+    
+    for config in "${config_files[@]}"; do
+        if [ -f "${CLOUDBERRY_BINARY_PATH}/${config}" ]; then
+            found_config="${config}"
+            log_time "Found configuration file: ${CLOUDBERRY_BINARY_PATH}/${config}"
+            break
+        fi
+    done
+    
+    if [ -n "${found_config}" ]; then
+        env_file="${CLOUDBERRY_BINARY_PATH}/${found_config}"
+        log_time "Updated environment file to: ${env_file}"
+    else
+        log_time "ERROR: No configuration files found in ${CLOUDBERRY_BINARY_PATH}"
+        log_time "Searched for: ${config_files[*]}"
+        exit 1
+    fi
+else
+    log_time "Using environment file: ${env_file}"
 fi
 
 function copy_script() {
