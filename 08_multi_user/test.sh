@@ -12,6 +12,10 @@ init_log ${step}
 
 sql_dir=${PWD}/${session_id}
 
+if [ "${ON_ERROR_STOP}" == 0 ]; then
+  set +e
+fi
+
 function generate_queries() {
   #going from 1 base to 0 base
   tpcds_id=$((session_id - 1))
