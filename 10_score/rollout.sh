@@ -20,6 +20,10 @@ FAILD_QUERY=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "select count(
 S_Q=${MULTI_USER_COUNT}
 SF=${GEN_DATA_SCALE}
 
+M_SUCCESS_QUERY=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "select count(*) from tpcds_testing.sql where tuples >= 0")
+M_FAILD_QUERY=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "select count(*) from tpcds_testing.sql where tuples < 0 and id > 1")
+
+
 # Calculate operands for v1.3.1 of the TPC-DS score
 Q_1_3_1=$((3 * S_Q * 99))
 TPT_1_3_1=$((QUERIES_TIME * S_Q))
@@ -54,7 +58,8 @@ printf "Load (seconds)\t\t\t%d\n" "${LOAD_TIME}"
 printf "Analyze (seconds)\t\t\t%d\n" "${ANALYZE_TIME}"
 printf "1 User Queries (seconds)\t\t%d\tFor %d success queries and %d failed queries\n" "${QUERIES_TIME}" "${SUCCESS_QUERY}" "${FAILD_QUERY}"
 printf "Sum of Elapse Time for all Concurrent Queries (seconds)\t%d\n" "${CONCURRENT_QUERY_TIME}"
-printf "Throughput Test Elapsed Time (seconds)\t%d\n" "${THROUGHPUT_ELAPSED_TIME}"
+printf "Throughput Test Elapsed Time (seconds)\t%d\tFor %d success queries and %d failed queries\n" "${THROUGHPUT_ELAPSED_TIME}" "${M_SUCCESS_QUERY}" "${M_FAILD_QUERY}"
+
 printf "\n"
 printf "TPC-DS v1.3.1 (QphDS@SF = floor(SF * Q / sum(TPT, TTT, TLD)))\n"
 printf "Q (3 * Sq * 99)\t\t%d\n" "${Q_1_3_1}"
