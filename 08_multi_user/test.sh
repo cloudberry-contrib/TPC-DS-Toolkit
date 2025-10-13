@@ -114,13 +114,19 @@ for i in ${sql_dir}/*.sql; do
       psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -A -q -t -P pager=off -v EXPLAIN_ANALYZE="" -f ${i} | wc -l
       exit ${PIPESTATUS[0]}
     )
-    tuples=$((tuples - 1))
+    if [ $? != 0 ]; then
+        tuples="-1"
+    fi
   else
     myfilename=$(basename ${i})
     mylogfile="${TPC_DS_DIR}/log/${session_id}.${myfilename}.multi.explain_analyze.log"
     log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -A -q -t -P pager=off -v EXPLAIN_ANALYZE=\"EXPLAIN ANALYZE\" -f ${i}"
     psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -A -q -t -P pager=off -v EXPLAIN_ANALYZE="EXPLAIN ANALYZE" -f ${i} > ${mylogfile}
-    tuples="0"
+    if [ $? != 0 ]; then
+        tuples="-1"
+      else
+        tuples="0"
+    fi
   fi
 
   #remove the extra line that \timing adds

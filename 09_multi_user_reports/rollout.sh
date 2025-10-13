@@ -41,6 +41,10 @@ THROUGHPUT_ELAPSED_TIME=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "s
 S_Q=${MULTI_USER_COUNT}
 SF=${GEN_DATA_SCALE}
 
+SUCCESS_QUERY=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "select count(*) from tpcds_testing.sql where tuples >= 0")
+FAILD_QUERY=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "select count(*) from tpcds_testing.sql where tuples < 0 and id > 1")
+
+
 echo "********************************************************************************"
 echo "Summary"
 echo "********************************************************************************"
@@ -49,7 +53,7 @@ echo ""
 printf "Number of Streams (Sq)\t%d\n" "${S_Q}"
 printf "Scale Factor (SF)\t%d\n" "${SF}"
 printf "Sum of Elapse Time for all Concurrent Queries (seconds)\t%d\n" "${CONCURRENT_QUERY_TIME}"
-printf "Throughput Test Elapsed Time (seconds)\t%d\n" "${THROUGHPUT_ELAPSED_TIME}"
+printf "Throughput Test Elapsed Time (seconds)\t%d\tFor %d success queries and %d failed queries\n" "${THROUGHPUT_ELAPSED_TIME}" "${SUCCESS_QUERY}" "${FAILD_QUERY}"
 printf "\n"
 echo "********************************************************************************"
 
