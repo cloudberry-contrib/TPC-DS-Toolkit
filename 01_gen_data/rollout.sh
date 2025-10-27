@@ -135,15 +135,14 @@ if [ "${GEN_NEW_DATA}" == "true" ]; then
       done
       
       # Start data generation processes for each path
+      TOTAL_PARALLEL=$((TOTAL_PATHS * PARALLEL))
       CHILD=1
       for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
         PATH_CHILD=1
         while [ ${PATH_CHILD} -le ${PARALLEL} ]; do
-          # Calculate the global child ID for dsdgen
-          GLOBAL_CHILD=$(( (CHILD - 1) % PARALLEL + 1 ))
-          log_time "sh ${PWD}/dsdgen -scale ${GEN_DATA_SCALE} -dir ${GEN_DATA_PATH} -parallel ${PARALLEL} -child ${GLOBAL_CHILD} -RNGSEED ${RNGSEED} -terminate n > ${GEN_DATA_PATH}/logs/tpcds.generate_data.${CHILD}.log 2>&1 &"
+          log_time "sh ${PWD}/dsdgen -scale ${GEN_DATA_SCALE} -dir ${GEN_DATA_PATH} -parallel ${TOTAL_PARALLEL} -child ${CHILD} -RNGSEED ${RNGSEED} -terminate n > ${GEN_DATA_PATH}/logs/tpcds.generate_data.${CHILD}.log 2>&1 &"
           cd ${PWD}
-          ${PWD}/dsdgen -scale ${GEN_DATA_SCALE} -dir ${GEN_DATA_PATH} -parallel ${PARALLEL} -child ${GLOBAL_CHILD} -RNGSEED ${RNGSEED} -terminate n > ${GEN_DATA_PATH}/logs/tpcds.generate_data.${CHILD}.log 2>&1 &
+          ${PWD}/dsdgen -scale ${GEN_DATA_SCALE} -dir ${GEN_DATA_PATH} -parallel ${TOTAL_PARALLEL} -child ${CHILD} -RNGSEED ${RNGSEED} -terminate n > ${GEN_DATA_PATH}/logs/tpcds.generate_data.${CHILD}.log 2>&1 &
           PATH_CHILD=$((PATH_CHILD + 1))
           CHILD=$((CHILD + 1))
         done
