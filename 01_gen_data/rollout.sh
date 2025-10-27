@@ -108,26 +108,48 @@ table_name="gen_data"
 export table_name
 
 if [ "${GEN_NEW_DATA}" == "true" ]; then
-  if [ "${RUN_MODEL}" != "local" ]; then
-    PARALLEL=${CLIENT_GEN_PARALLEL}
-    CHILD=1
-    GEN_DATA_PATH="${CLIENT_GEN_PATH}"
-
-    if [[ ! -d "${GEN_DATA_PATH}" && ! -L "${GEN_DATA_PATH}" ]]; then
-      log_time "mkdir ${GEN_DATA_PATH}"
-      mkdir ${GEN_DATA_PATH}
-    fi
-    rm -rf ${GEN_DATA_PATH}/*
-    mkdir -p ${GEN_DATA_PATH}/logs
-    
-    while [ ${CHILD} -le ${PARALLEL} ]; do
-      log_time "sh ${PWD}/dsdgen -scale ${GEN_DATA_SCALE} -dir ${GEN_DATA_PATH} -parallel ${PARALLEL} -child ${CHILD} -RNGSEED ${RNGSEED} -terminate n > ${GEN_DATA_PATH}/logs/tpcds.generate_data.${CHILD}.log 2>&1 &"
-      cd ${PWD}
-      ${PWD}/dsdgen -scale ${GEN_DATA_SCALE} -dir ${GEN_DATA_PATH} -parallel ${PARALLEL} -child ${CHILD} -RNGSEED ${RNGSEED} -terminate n > ${GEN_DATA_PATH}/logs/tpcds.generate_data.${CHILD}.log 2>&1 &
-      CHILD=$((CHILD + 1))
-    done
-    wait
-  else
+    if [ "${RUN_MODEL}" != "local" ]; then
+      PARALLEL=${CLIENT_GEN_PARALLEL}
+      
+      # Split CLIENT_GEN_PATH into array of paths
+      IFS=' ' read -ra GEN_PATHS <<< "${CLIENT_GEN_PATH}"
+      TOTAL_PATHS=${#GEN_PATHS[@]}
+      
+      if [ ${TOTAL_PATHS} -eq 0 ]; then
+        log_time "ERROR: CLIENT_GEN_PATH is empty or not set"
+        exit 1
+      fi
+      
+      log_time "Number of data generation paths: ${TOTAL_PATHS}"
+      log_time "Parallel processes per path: ${PARALLEL}"
+      log_time "Total parallel processes: $((TOTAL_PATHS * PARALLEL))"
+      
+      # Prepare each data generation path
+      for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
+        if [[ ! -d "${GEN_DATA_PATH}" && ! -L "${GEN_DATA_PATH}" ]]; then
+          log_time "mkdir ${GEN_DATA_PATH}"
+          mkdir -p ${GEN_DATA_PATH}
+        fi
+        rm -rf ${GEN_DATA_PATH}/*
+        mkdir -p ${GEN_DATA_PATH}/logs
+      done
+      
+      # Start data generation processes for each path
+      CHILD=1
+      for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
+        PATH_CHILD=1
+        while [ ${PATH_CHILD} -le ${PARALLEL} ]; do
+          # Calculate the global child ID for dsdgen
+          GLOBAL_CHILD=$(( (CHILD - 1) % PARALLEL + 1 ))
+          log_time "sh ${PWD}/dsdgen -scale ${GEN_DATA_SCALE} -dir ${GEN_DATA_PATH} -parallel ${PARALLEL} -child ${GLOBAL_CHILD} -RNGSEED ${RNGSEED} -terminate n > ${GEN_DATA_PATH}/logs/tpcds.generate_data.${CHILD}.log 2>&1 &"
+          cd ${PWD}
+          ${PWD}/dsdgen -scale ${GEN_DATA_SCALE} -dir ${GEN_DATA_PATH} -parallel ${PARALLEL} -child ${GLOBAL_CHILD} -RNGSEED ${RNGSEED} -terminate n > ${GEN_DATA_PATH}/logs/tpcds.generate_data.${CHILD}.log 2>&1 &
+          PATH_CHILD=$((PATH_CHILD + 1))
+          CHILD=$((CHILD + 1))
+        done
+      done
+      wait
+    else
     kill_orphaned_data_gen
     copy_generate_data
     gen_data
