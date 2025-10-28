@@ -162,7 +162,7 @@ fi
 # Check if current user matches BENCH_ROLE
 if [ "${DB_CURRENT_USER}" != "${BENCH_ROLE}" ]; then
   log_time "Current user ${DB_CURRENT_USER} does not match BENCH_ROLE ${BENCH_ROLE}."
-  if [ "${BENCH_ROLE}" == "gpadmin"]; then
+  if [ "${BENCH_ROLE}" == "gpadmin" ]; then
     log_time "Cannot use gpadmin as bench role if not connected as gpadmin."
     exit 1
   fi
