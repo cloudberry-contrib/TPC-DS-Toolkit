@@ -18,9 +18,10 @@ export RUN_MODEL="local"
 export PSQL_OPTIONS=""
 
 ## The following variables only take effect when RUN_MODEL is set to "cloud".
-### Default path to store the generated benchmark data
+### Default path to store the generated benchmark data, separated by space for multiple paths.
 export CLIENT_GEN_PATH="/tmp/dsbenchmark"
-### How many parallel processes to run on the client to generate data
+### How many parallel processes to run on each data path to generate data    
+### Default is 2, max is Number of CPU cores / number of $CLIENT_GEN_PATH.  
 export CLIENT_GEN_PARALLEL="2"
 
 ## The following variables only take effect when RUN_MODEL is set to "local".

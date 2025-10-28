@@ -15,7 +15,7 @@ export TPC_DS_DIR
 log_time "TPC-DS test started"
 printf "\n"
 
-log_time "TPC-DS toolkit version is: V1.8"
+log_time "TPC-DS toolkit version is: V1.9"
 
 # Check that pertinent variables are set in the variable file.
 check_variables
@@ -29,6 +29,13 @@ export DB_VERSION=${VERSION}
 export DB_VERSION_FULL=${VERSION_FULL}
 log_time "Current database is:\n${DB_VERSION}"
 log_time "Current database version is:\n${DB_VERSION_FULL}"
+
+if [ "${DB_CURRENT_USER}" != "${BENCH_ROLE}" ]; then
+  if [ "${BENCH_ROLE}" == "gpadmin" ]; then
+    log_time "Cannot use gpadmin as bench role if not connected as gpadmin."
+    exit 1
+  fi
+fi
 
 if [ "${DB_VERSION}" == "postgresql" ]; then
   export RUN_MODEL="cloud"
