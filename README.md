@@ -205,8 +205,8 @@ export RUN_MODEL="cloud"    # "local" or "cloud"
 
 # Remote cluster connection
 export PSQL_OPTIONS="-h <host> -p <port>"
-export CLIENT_GEN_PATH="/tmp/dsbenchmark"  # Location for data generation
-export CLIENT_GEN_PARALLEL="2"             # Number of parallel data generation processes
+export CLIENT_GEN_PATH="/tmp/dsbenchmark"  # Location for data generation, separated by space for multiple paths.
+export CLIENT_GEN_PARALLEL="2"             # Number of parallel data generation processes for each path.
 
 # Local mode settings
 export LOCAL_GEN_PARALLEL="1"              # Number of parallel processes on each segment for local mode
