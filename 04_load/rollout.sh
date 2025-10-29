@@ -55,10 +55,25 @@ function start_gpfdist() {
 }
 
 if [ "${RUN_MODEL}" == "remote" ]; then
-  PORT=18888
-  GEN_DATA_PATH=${CLIENT_GEN_PATH}
   sh ${PWD}/stop_gpfdist.sh
-  sh ${PWD}/start_gpfdist.sh $PORT ${GEN_DATA_PATH} ${env_file}
+  # Split CLIENT_GEN_PATH into array of paths to support multiple directories
+  IFS=' ' read -ra GEN_PATHS <<< "${CLIENT_GEN_PATH}"
+  
+  if [ ${#GEN_PATHS[@]} -eq 0 ]; then
+    log_time "ERROR: CLIENT_GEN_PATH is empty or not set"
+    exit 1
+  fi
+  
+  # Start gpfdist for each data path with different ports
+  PORT=18888
+  for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
+    log_time "Starting gpfdist on port ${PORT} for path: ${GEN_DATA_PATH}"
+    sh ${PWD}/start_gpfdist.sh $PORT "${GEN_DATA_PATH}" ${env_file}
+    let PORT=$PORT+1
+  done
+  
+  # Set GEN_DATA_PATH to the first path for backward compatibility
+  GEN_DATA_PATH=${GEN_PATHS[0]}
 elif [ "${RUN_MODEL}" == "local" ]; then
   CLOUDBERRY_BINARY_PATH=${GPHOME}
   env_file=""
