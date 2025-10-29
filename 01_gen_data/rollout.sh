@@ -150,7 +150,7 @@ if [ "${GEN_NEW_DATA}" == "true" ]; then
         done
         
         # Wait for data generation processes in current path to complete
-        log_time "Waiting for data generation processes in ${GEN_DATA_PATH} to complete..."
+        log_time "Waiting for data generation processes to complete..."
         wait
         
         # make sure there is a file in each directory so that gpfdist doesn't throw an error
