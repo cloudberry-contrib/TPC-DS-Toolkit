@@ -138,6 +138,8 @@ if [ "${GEN_NEW_DATA}" == "true" ]; then
       TOTAL_PARALLEL=$((TOTAL_PATHS * PARALLEL))
       CHILD=1
       for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
+        # Save the starting CHILD number for current path
+        CURRENT_START_CHILD=${CHILD}
         PATH_CHILD=1
         while [ ${PATH_CHILD} -le ${PARALLEL} ]; do
           log_time "sh ${PWD}/dsdgen -scale ${GEN_DATA_SCALE} -dir ${GEN_DATA_PATH} -parallel ${TOTAL_PARALLEL} -child ${CHILD} -RNGSEED ${RNGSEED} -terminate n > ${GEN_DATA_PATH}/logs/tpcds.generate_data.${CHILD}.log 2>&1 &"
@@ -145,6 +147,26 @@ if [ "${GEN_NEW_DATA}" == "true" ]; then
           ${PWD}/dsdgen -scale ${GEN_DATA_SCALE} -dir ${GEN_DATA_PATH} -parallel ${TOTAL_PARALLEL} -child ${CHILD} -RNGSEED ${RNGSEED} -terminate n > ${GEN_DATA_PATH}/logs/tpcds.generate_data.${CHILD}.log 2>&1 &
           PATH_CHILD=$((PATH_CHILD + 1))
           CHILD=$((CHILD + 1))
+        done
+        
+        # Wait for data generation processes in current path to complete
+        log_time "Waiting for data generation processes in ${GEN_DATA_PATH} to complete..."
+        wait
+        
+        # make sure there is a file in each directory so that gpfdist doesn't throw an error
+        declare -a tables=("call_center" "catalog_page" "catalog_returns" "catalog_sales" "customer" "customer_address" "customer_demographics" "date_dim" "household_demographics" "income_band" "inventory" "item" "promotion" "reason" "ship_mode" "store" "store_returns" "store_sales" "time_dim" "warehouse" "web_page" "web_returns" "web_sales" "web_site")
+
+        # Create empty files with correct directory path and CHILD numbers
+        for i in "${tables[@]}"; do
+          # Create files for each CHILD number in current path
+          for ((j=${CURRENT_START_CHILD}; j<${CHILD}; j++)); do
+            filename="${GEN_DATA_PATH}/${i}_${j}_${TOTAL_PARALLEL}.dat"
+            log_time "Checking if file exists: ${filename}"
+            if [ ! -f ${filename} ]; then
+              log_time "Creating empty file: ${filename}"
+              touch ${filename}
+            fi
+          done
         done
       done
       wait
