@@ -160,11 +160,16 @@ if [ "${GEN_NEW_DATA}" == "true" ]; then
         # Create empty files with correct directory path and CHILD numbers
         for i in "${tables[@]}"; do
           # Create files for each CHILD number in current path
-          filename="${GEN_DATA_PATH}/${i}_[0-9]*_[0-9]*.dat" 
-          log_time "Checking if file exists: ${filename}"
-          if ! ls "$filename" 1> /dev/null 2>&1; then
-            log_time "Creating empty file: ${GEN_DATA_PATH}/${i}_0_0.dat"
-            touch ${GEN_DATA_PATH}/${i}_0_0.dat
+          # Check if any file matching the pattern exists
+          filename_pattern="${GEN_DATA_PATH}/${i}_[0-9]*_[0-9]*.dat"
+          log_time "Checking if files exist: ${filename_pattern}"
+          
+          # Simple file check using ls and grep
+          # If no matching files found, create a placeholder file
+          if ! ls ${filename_pattern} 2>/dev/null | grep -q .; then
+            placeholder_file="${GEN_DATA_PATH}/${i}_0_0.dat"
+            log_time "Creating placeholder file: ${placeholder_file}"
+            touch "${placeholder_file}"
           fi
         done
       done
