@@ -148,28 +148,26 @@ if [ "${GEN_NEW_DATA}" == "true" ]; then
           PATH_CHILD=$((PATH_CHILD + 1))
           CHILD=$((CHILD + 1))
         done
-        
+      done
         # Wait for data generation processes in current path to complete
-        log_time "Waiting for data generation processes to complete..."
-        wait
-        
+      log_time "Waiting for data generation processes to complete..."
+      wait
+      
+      for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
         # make sure there is a file in each directory so that gpfdist doesn't throw an error
         declare -a tables=("call_center" "catalog_page" "catalog_returns" "catalog_sales" "customer" "customer_address" "customer_demographics" "date_dim" "household_demographics" "income_band" "inventory" "item" "promotion" "reason" "ship_mode" "store" "store_returns" "store_sales" "time_dim" "warehouse" "web_page" "web_returns" "web_sales" "web_site")
 
         # Create empty files with correct directory path and CHILD numbers
         for i in "${tables[@]}"; do
           # Create files for each CHILD number in current path
-          for ((j=${CURRENT_START_CHILD}; j<${CHILD}; j++)); do
-            filename="${GEN_DATA_PATH}/${i}_${j}_${TOTAL_PARALLEL}.dat"
-            log_time "Checking if file exists: ${filename}"
-            if [ ! -f ${filename} ]; then
-              log_time "Creating empty file: ${filename}"
-              touch ${filename}
-            fi
-          done
+          filename="${GEN_DATA_PATH}/${i}_[0-9]*_[0-9]*.dat" 
+          log_time "Checking if file exists: ${filename}"
+          if ! ls "$filename" 1> /dev/null 2>&1; then
+            log_time "Creating empty file: ${GEN_DATA_PATH}/${i}_0_0.dat"
+            touch ${GEN_DATA_PATH}/${i}_0_0.dat
+          fi
         done
       done
-      wait
     else
     kill_orphaned_data_gen
     copy_generate_data
