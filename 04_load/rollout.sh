@@ -55,10 +55,62 @@ function start_gpfdist() {
 }
 
 if [ "${RUN_MODEL}" == "remote" ]; then
-  PORT=18888
-  GEN_DATA_PATH=${CLIENT_GEN_PATH}
   sh ${PWD}/stop_gpfdist.sh
-  sh ${PWD}/start_gpfdist.sh $PORT ${GEN_DATA_PATH} ${env_file}
+  # Split CLIENT_GEN_PATH into array of paths to support multiple directories
+  IFS=' ' read -ra GEN_PATHS <<< "${CLIENT_GEN_PATH}"
+  
+  if [ ${#GEN_PATHS[@]} -eq 0 ]; then
+    log_time "ERROR: CLIENT_GEN_PATH is empty or not set"
+    exit 1
+  fi
+
+  CLOUDBERRY_BINARY_PATH=${GPHOME}
+  env_file=""
+
+  if [ "$DB_VERSION" = "synxdb_4" ]; then
+    env_file="${CLOUDBERRY_BINARY_PATH}/cloudberry-env.sh"
+  elif [ "$DB_VERSION" = "synxdb_2" ]; then
+    env_file="${CLOUDBERRY_BINARY_PATH}/synxdb_path.sh"
+  else
+    env_file="${CLOUDBERRY_BINARY_PATH}/greenplum_path.sh"
+  fi
+
+  if [ ! -f "${env_file}" ]; then
+    log_time "Environment file ${env_file} not found, searching for alternative configuration files..."
+    
+    config_files=("greenplum_path.sh" "cluster_env.sh" "synxdb_path.sh" "cloudberry-env.sh")
+    found_config=""
+    
+    for config in "${config_files[@]}"; do
+        if [ -f "${CLOUDBERRY_BINARY_PATH}/${config}" ]; then
+            found_config="${config}"
+            log_time "Found configuration file: ${CLOUDBERRY_BINARY_PATH}/${config}"
+            break
+        fi
+    done
+    
+    if [ -n "${found_config}" ]; then
+        env_file="${CLOUDBERRY_BINARY_PATH}/${found_config}"
+        log_time "Updated environment file to: ${env_file}"
+    else
+        log_time "ERROR: No configuration files found in ${CLOUDBERRY_BINARY_PATH}"
+        log_time "Searched for: ${config_files[*]}"
+        exit 1
+    fi
+  else
+    log_time "Using environment file: ${env_file}"
+  fi
+  
+  # Start gpfdist for each data path with different ports
+  PORT=18888
+  for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
+    log_time "Starting gpfdist on port ${PORT} for path: ${GEN_DATA_PATH}"
+    sh ${PWD}/start_gpfdist.sh $PORT "${GEN_DATA_PATH}" ${env_file}
+    let PORT=$PORT+1
+  done
+  
+  # Set GEN_DATA_PATH to the first path for backward compatibility
+  GEN_DATA_PATH=${GEN_PATHS[0]}
 elif [ "${RUN_MODEL}" == "local" ]; then
   CLOUDBERRY_BINARY_PATH=${GPHOME}
   env_file=""
@@ -147,8 +199,7 @@ for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "
                 log_time "Loading data from path: ${GEN_DATA_PATH}"
                 for file in "${GEN_DATA_PATH}/${table_name}"_[0-9]*_[0-9]*.dat; do
                     if [ -e "$file" ]; then
-                        #log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -c \"\COPY ${DB_SCHEMA_NAME}.${table_name} FROM '$file' DELIMITER '|' NULL AS '' ESCAPE E'\\\\\\\\' ENCODING 'LATIN1'\" | grep COPY | awk -F ' ' '{print \$2}'"
-                        log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -c \"\COPY ${DB_SCHEMA_NAME}.${table_name} FROM '$file' WITH (FORMAT csv, DELIMITER '|', NULL '', ESCAPE E'\\\\\\\\', ENCODING 'LATIN1')\" | grep COPY | awk -F ' ' '{print \$2}'"
+                      log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -c \"\COPY ${DB_SCHEMA_NAME}.${table_name} FROM '$file' WITH (FORMAT csv, DELIMITER '|', NULL '', ESCAPE E'\\\\\\\\', ENCODING 'LATIN1')\" | grep COPY | awk -F ' ' '{print \$2}'"
                         result=$(
                             psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -c "\COPY ${DB_SCHEMA_NAME}.${table_name} FROM '$file' WITH (FORMAT csv, DELIMITER '|', NULL '', ESCAPE E'\\\\', ENCODING 'LATIN1')" | grep COPY | awk -F ' ' '{print $2}'
                             exit ${PIPESTATUS[0]}

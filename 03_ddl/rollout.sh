@@ -125,9 +125,21 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
      
      if [ "${RUN_MODEL}" == "remote" ]; then
        EXT_HOST=$(hostname -I | awk '{print $1}')
+       # Split CLIENT_GEN_PATH into array of paths to support multiple directories
+       IFS=' ' read -ra GEN_PATHS <<< "${CLIENT_GEN_PATH}"
+       
+       counter=0
        PORT=18888
-       LOCATION="'"
-       LOCATION+="gpfdist://${EXT_HOST}:${PORT}/${table_name}_[0-9]*_[0-9]*.dat"
+       for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
+         if [ "${counter}" -eq "0" ]; then
+           LOCATION="'"
+         else
+           LOCATION+="', '"
+         fi
+         LOCATION+="gpfdist://${EXT_HOST}:${PORT}/${table_name}_[0-9]*_[0-9]*.dat"
+         let PORT=$PORT+1
+         counter=$((counter + 1))
+       done
        LOCATION+="'"
       else
         if [ "${DB_VERSION}" == "gpdb_4_3" ] || [ "${DB_VERSION}" == "gpdb_5" ]; then
