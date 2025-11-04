@@ -119,6 +119,6 @@ export DB_CURRENT_USER=$(psql ${PSQL_OPTIONS} -t -c "SELECT current_user;" 2>/de
 ## Set different storage options for each access method
 ## Set to use partition for the following tables:
 ## catalog_returns / catalog_sales / inventory / store_returns / store_sales / web_returns / web_sales
-# export TABLE_USE_PARTITION="true"
+export TABLE_USE_PARTITION="true"
 ## SET TABLE_STORAGE_OPTIONS with different options in GP/CBDB/Cloud "appendoptimized=true, orientation=column, compresstype=zstd, compresslevel=5, blocksize=1048576"
 export TABLE_STORAGE_OPTIONS="WITH (appendoptimized=true, orientation=column,compresstype=zstd, compresslevel=5)"

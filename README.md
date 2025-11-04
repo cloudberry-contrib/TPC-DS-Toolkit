@@ -341,8 +341,9 @@ For optimal performance:
 
 1. **Memory Settings**
    ```bash
-   # Recommended for 100GB+ RAM systems
+   # Recommended for 8GB+ RAM per segment node cluster
    export STATEMENT_MEM="8GB"
+   # Should be set to STATEMENT_MEM / MULTI_USER_COUNT
    export STATEMENT_MEM_MULTI_USER="4GB"
    ```
 
@@ -351,6 +352,7 @@ For optimal performance:
    # For best compression ratio
    export TABLE_ACCESS_METHOD="USING ao_column"
    export TABLE_STORAGE_OPTIONS="WITH (compresstype=zstd, compresslevel=9)"
+   # Use partitioned tables for better query performance
    export TABLE_USE_PARTITION="true"
    ```
 
