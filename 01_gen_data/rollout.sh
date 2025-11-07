@@ -20,15 +20,33 @@ else
 fi
 
 function get_count_generate_data() {
-  count="0"
+  # Initialize counter as integer type
+  local count=0
+  
+  # Check if segment_hosts.txt file exists
+  if [ ! -f "${TPC_DS_DIR}/segment_hosts.txt" ]; then
+    log_time "ERROR: segment_hosts.txt not found at ${TPC_DS_DIR}"
+    return 0
+  fi
+  
   while read -r i; do
-    next_count=$(ssh -o ConnectTimeout=0 -o LogLevel=quiet -n -f ${i} "bash -c 'ps -ef | grep generate_data.sh | grep -v grep | wc -l'" 2>&1 || true)
+    # Set reasonable connection timeout to avoid infinite waiting
+    # Use -n option instead of -f to ensure command completes
+    next_count=$(ssh -o ConnectTimeout=10 -o LogLevel=quiet -n ${i} "bash -c 'ps -ef | grep generate_data.sh | grep -v grep | wc -l'" 2>/dev/null)
+    
+    # Check if it's a valid number, default to 0 if not
     check="^[0-9]+$"
-    if ! [[ ${next_count} =~ ${check} ]]; then
-      next_count="1"
+    if ! [[ "${next_count}" =~ ${check} ]]; then
+      log_time "WARNING: Failed to get process count from host ${i}, assuming 0"
+      next_count=0
     fi
+    
     count=$((count + next_count))
-  done < ${TPC_DS_DIR}/segment_hosts.txt
+  done < "${TPC_DS_DIR}/segment_hosts.txt"
+  
+  # Return calculated result
+  echo "${count}"
+  return 0
 }
 
 function kill_orphaned_data_gen() {
