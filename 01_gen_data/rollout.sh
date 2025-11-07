@@ -196,7 +196,7 @@ if [ "${GEN_NEW_DATA}" == "true" ]; then
     copy_generate_data
     gen_data
     echo ""
-    get_count_generate_data
+    count=$(get_count_generate_data)
     log_time "Now generating data.  This may take a while."
     seconds=0
     echo -ne "Generating data duration: "
@@ -204,7 +204,7 @@ if [ "${GEN_NEW_DATA}" == "true" ]; then
       printf "\rGenerating data duration: ${seconds} second(s)"
       sleep 5
       seconds=$((seconds + 5))
-      get_count_generate_data
+      count=$(get_count_generate_data)
     done
   fi
   echo ""
