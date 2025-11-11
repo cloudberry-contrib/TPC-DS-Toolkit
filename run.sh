@@ -9,7 +9,7 @@ logfilename=$(date +%Y%m%d)_$(date +%H%M%S)
 
 # Backup the log folder before running the benchmark
 LOG_FOLDER=${TPC_DS_DIR}/log
-LOG_FOLDER_BACKUP=${LOG_FOLDER}_$logfilename
+LOG_FOLDER_BACKUP=${LOG_FOLDER}_backup_$logfilename
 cp -r ${LOG_FOLDER} ${LOG_FOLDER_BACKUP}
 log_time "Log folder backed up to ${LOG_FOLDER_BACKUP}"
 
