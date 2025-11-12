@@ -34,5 +34,6 @@ gpconfig -c max_prepared_transactions -v 100
 # The following are for Cloudberry only
 gpconfig -c gp_enable_runtime_filter_pushdown -v on
 gpconfig -c gp_appendonly_insert_files -v 0
+gpconfig -c gp_interconnect_fc_method -v loss_advance
 
 #psql ${PSQL_OPTIONS} -f set_resource_group.sql template1

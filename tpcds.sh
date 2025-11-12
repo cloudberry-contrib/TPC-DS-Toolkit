@@ -15,7 +15,7 @@ export TPC_DS_DIR
 log_time "TPC-DS test started"
 printf "\n"
 
-log_time "TPC-DS toolkit version is: V1.10"
+log_time "TPC-DS toolkit version is: V1.11"
 
 # Check that pertinent variables are set in the variable file.
 check_variables
@@ -44,5 +44,12 @@ fi
 if [ "${RUN_MODEL}" != "cloud" ]; then
   source_bashrc
 fi
+
+# Backup the log folder before running the benchmark
+LOG_FOLDER=${TPC_DS_DIR}/log
+LOG_FOLDER_BACKUP=${LOG_FOLDER}_backup_$(date +%Y%m%d_%H%M%S)
+cp -r ${LOG_FOLDER} ${LOG_FOLDER_BACKUP}
+log_time "Log folder backed up to ${LOG_FOLDER_BACKUP}"
+
 # run the benchmark
 ./rollout.sh
