@@ -232,7 +232,7 @@ wait
 # Close the file descriptor
 exec 5>&-
 
-log_time "finished loading tables"
+log_time "Finished loading tables"
 
 log_time "Starting post loading processing..."
 
@@ -242,6 +242,8 @@ if [ "${DB_VERSION}" == "postgresql" ]; then
   psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -f ${PWD}/100.postgresql.indexkeys.sql -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}"
   psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -c "SELECT tablename, indexname FROM pg_indexes WHERE schemaname = '${DB_SCHEMA_NAME}' ORDER BY tablename, indexname;"
 fi
+
+log_time "Clean up gpfdist"
 
 if [ "${RUN_MODEL}" == "remote" ]; then
   log_time "Clean up gpfdist on client"
