@@ -19,7 +19,7 @@ function create_directories() {
 create_directories
 
 echo "############################################################################"
-echo "TPC-DS Script for Cloudberry Database."
+echo "TPC-DS Script for PostgreSQL / Cloudberry Database."
 echo "############################################################################"
 echo ""
 echo "############################################################################"
