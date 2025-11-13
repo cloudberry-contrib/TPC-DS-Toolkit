@@ -16,8 +16,8 @@ multi_user_report_schema="${DB_SCHEMA_NAME}_multi_user_reports"
 
 # Process SQL files in numeric order with absolute paths
 for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "%f\n" | sort -n); do
-  log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -a -f ${PWD}/${i} -v report_schema=${multi_user_report_schema}"
-  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -a -f "${PWD}/${i}" -v report_schema=${multi_user_report_schema}
+  log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -a -f ${PWD}/${i} -v multi_user_report_schema=${multi_user_report_schema}"
+  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -a -f "${PWD}/${i}" -v multi_user_report_schema=${multi_user_report_schema}
   echo ""
 done
 
