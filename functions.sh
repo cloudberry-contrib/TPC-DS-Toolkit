@@ -112,13 +112,13 @@ function get_gpfdist_port() {
       # Validate if extracted values are numeric
       if ! [[ "$primary_base" =~ ^[0-9]$ ]] || ! [[ "$mirror_base" =~ ^[0-9]$ ]]; then
         # Use default values if not numeric
-        primary_base=9
-        mirror_base=9
+        primary_base=6
+        mirror_base=6
       fi
 
       # Flag to track if a usable port is found
       port_found=false
-      for i in $(seq 3 6); do
+      for i in $(seq 3 5); do
         if [ "${primary_base}" -ne "${i}" ] && [ "${mirror_base}" -ne "${i}" ]; then
           GPFDIST_PORT="${i}$(echo $(( $RANDOM % 1000 )) | awk '{printf "%03d", $1}')"
           port_found=true
@@ -138,7 +138,7 @@ function get_gpfdist_port() {
       export GPFDIST_PORT
     fi
   else
-    GPFDIST_PORT="77$(echo $(( $RANDOM % 100 )) | awk '{printf "%02d", $1}')"
+    GPFDIST_PORT="3$(echo $(( $RANDOM % 1000 )) | awk '{printf "%03d", $1}')"
     export GPFDIST_PORT # Also need to export in non-local mode
   fi
 }
