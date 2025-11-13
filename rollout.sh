@@ -10,6 +10,12 @@ function create_directories() {
   if [ ! -d ${TPC_DS_DIR}/log ]; then
     echo "Creating log directory"
     mkdir ${TPC_DS_DIR}/log
+  else
+    # Backup the log folder before running the benchmark
+    LOG_FOLDER=${TPC_DS_DIR}/log
+    LOG_FOLDER_BACKUP=${LOG_FOLDER}_backup_$(date +%Y%m%d_%H%M%S)
+    cp -r ${LOG_FOLDER} ${LOG_FOLDER_BACKUP}
+    log_time "Log folder backed up to ${LOG_FOLDER_BACKUP}"
   fi
 }
 
