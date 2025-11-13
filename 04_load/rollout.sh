@@ -102,7 +102,7 @@ if [ "${RUN_MODEL}" == "remote" ]; then
   fi
   
   # Start gpfdist for each data path with different ports
-  PORT=18888
+  PORT=9600
   for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
     log_time "Starting gpfdist on port ${PORT} for path: ${GEN_DATA_PATH}"
     sh ${PWD}/start_gpfdist.sh $PORT "${GEN_DATA_PATH}" ${env_file}
