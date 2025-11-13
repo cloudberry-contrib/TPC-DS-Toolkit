@@ -95,5 +95,9 @@ LOG_FOLDER_BACKUP=${LOG_FOLDER}_backup_$(date +%Y%m%d_%H%M%S)
 cp -r ${LOG_FOLDER} ${LOG_FOLDER_BACKUP}
 log_time "Log folder backed up to ${LOG_FOLDER_BACKUP}"
 
+# Get a random port for gpfdist
+get_gpfdist_port
+log_time "gpfdist port set to: ${GPFDIST_PORT}"
+
 # run the benchmark
 ./rollout.sh

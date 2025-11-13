@@ -32,7 +32,6 @@ function stop_gpfdist() {
 function start_gpfdist() {
   stop_gpfdist
   sleep 1
-  get_gpfdist_port
 
   if [ "${DB_VERSION}" == "gpdb_4_3" ] || [ "${DB_VERSION}" == "gpdb_5" ]; then
     SQL_QUERY="select rank() over (partition by g.hostname order by p.fselocation), g.hostname, p.fselocation as path from gp_segment_configuration g join pg_filespace_entry p on g.dbid = p.fsedbid join pg_tablespace t on t.spcfsoid = p.fsefsoid where g.content >= 0 and g.role = '${GPFDIST_LOCATION}' and t.spcname = 'pg_default' order by g.hostname"
@@ -102,7 +101,7 @@ if [ "${RUN_MODEL}" == "remote" ]; then
   fi
   
   # Start gpfdist for each data path with different ports
-  PORT=9600
+  PORT=${GPFDIST_PORT}
   for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
     log_time "Starting gpfdist on port ${PORT} for path: ${GEN_DATA_PATH}"
     sh ${PWD}/start_gpfdist.sh $PORT "${GEN_DATA_PATH}" ${env_file}

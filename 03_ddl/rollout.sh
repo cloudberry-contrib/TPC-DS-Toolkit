@@ -110,8 +110,7 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
     done
   fi
 
-  #external tables are the same for all gpdb
-  get_gpfdist_port
+
 
   if [ "${RUN_MODEL}" != "cloud" ]; then
     # Process external tables in numeric order
@@ -130,7 +129,7 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
        IFS=' ' read -ra GEN_PATHS <<< "${CLIENT_GEN_PATH}"
        
        counter=0
-       PORT=18888
+       PORT=${GPFDIST_PORT}
        for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
          if [ "${counter}" -eq "0" ]; then
            LOCATION="'"
