@@ -34,7 +34,7 @@ psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -t -A -c "select 'analyze ' || n.nspname
 
 # Generate detailed report
 log_time "Generating detailed report"
-psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -P pager=off -f "${PWD}/detailed_report.sql"
+psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -P pager=off -f "${PWD}/detailed_report.sql" -v multi_user_report_schema=${multi_user_report_schema}
 echo ""
 
 CONCURRENT_QUERY_TIME=$(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "select round(sum(extract('epoch' from duration))) from ${multi_user_report_schema}.sql")
