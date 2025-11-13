@@ -1,1 +1,1 @@
-INSERT INTO :DB_SCHEMA_NAME.store_sales SELECT * FROM ext_tpcds.store_sales;
+INSERT INTO :DB_SCHEMA_NAME.store_sales SELECT * FROM :DB_EXT_SCHEMA_NAME.store_sales;

@@ -211,10 +211,10 @@ for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "
                 done
             done
         else
-            log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -f ${PWD}/${i} -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\" | grep INSERT | awk -F ' ' '{print \$3}'"
+            log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -f ${PWD}/${i} -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\" -v DB_EXT_SCHEMA_NAME=\"${DB_EXT_SCHEMA_NAME}\" | grep INSERT | awk -F ' ' '{print \$3}'"
             tuples=$(
                 psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -f "${PWD}/${i}" \
-                    -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" | grep INSERT | awk -F ' ' '{print $3}'
+                    -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" -v DB_EXT_SCHEMA_NAME="${DB_EXT_SCHEMA_NAME}" | grep INSERT | awk -F ' ' '{print $3}'
                 exit ${PIPESTATUS[0]}
             )
         fi

@@ -1,1 +1,1 @@
-\COPY tpcds_reports.ddl FROM :LOGFILE WITH DELIMITER '|';
+\COPY :report_schema.ddl FROM :LOGFILE WITH DELIMITER '|';

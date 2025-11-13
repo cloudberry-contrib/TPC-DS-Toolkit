@@ -1,4 +1,4 @@
-WITH x AS (SELECT duration FROM tpcds_reports.gen_data)
+WITH x AS (SELECT duration FROM :report_schema.gen_data)
 SELECT 'Seconds' as time, round(extract('epoch' from duration)) AS value
 FROM x
 UNION ALL

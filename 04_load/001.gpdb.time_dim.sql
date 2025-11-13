@@ -1,1 +1,1 @@
-INSERT INTO :DB_SCHEMA_NAME.time_dim SELECT * FROM ext_tpcds.time_dim;
+INSERT INTO :DB_SCHEMA_NAME.time_dim SELECT * FROM :DB_EXT_SCHEMA_NAME.time_dim;

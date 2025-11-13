@@ -1,1 +1,1 @@
-INSERT INTO :DB_SCHEMA_NAME.inventory SELECT * FROM ext_tpcds.inventory;
+INSERT INTO :DB_SCHEMA_NAME.inventory SELECT * FROM :DB_EXT_SCHEMA_NAME.inventory;

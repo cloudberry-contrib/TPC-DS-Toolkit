@@ -1,1 +1,1 @@
-INSERT INTO :DB_SCHEMA_NAME.warehouse SELECT * FROM ext_tpcds.warehouse;
+INSERT INTO :DB_SCHEMA_NAME.warehouse SELECT * FROM :DB_EXT_SCHEMA_NAME.warehouse;
