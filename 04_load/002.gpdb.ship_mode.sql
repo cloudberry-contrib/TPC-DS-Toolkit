@@ -1,1 +1,1 @@
-INSERT INTO :DB_SCHEMA_NAME.ship_mode SELECT * FROM ext_tpcds.ship_mode;
+INSERT INTO :DB_SCHEMA_NAME.ship_mode SELECT * FROM :DB_EXT_SCHEMA_NAME.ship_mode;

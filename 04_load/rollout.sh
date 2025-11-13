@@ -32,7 +32,6 @@ function stop_gpfdist() {
 function start_gpfdist() {
   stop_gpfdist
   sleep 1
-  get_gpfdist_port
 
   if [ "${DB_VERSION}" == "gpdb_4_3" ] || [ "${DB_VERSION}" == "gpdb_5" ]; then
     SQL_QUERY="select rank() over (partition by g.hostname order by p.fselocation), g.hostname, p.fselocation as path from gp_segment_configuration g join pg_filespace_entry p on g.dbid = p.fsedbid join pg_tablespace t on t.spcfsoid = p.fsefsoid where g.content >= 0 and g.role = '${GPFDIST_LOCATION}' and t.spcname = 'pg_default' order by g.hostname"
@@ -102,7 +101,7 @@ if [ "${RUN_MODEL}" == "remote" ]; then
   fi
   
   # Start gpfdist for each data path with different ports
-  PORT=18888
+  PORT=${GPFDIST_PORT}
   for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
     log_time "Starting gpfdist on port ${PORT} for path: ${GEN_DATA_PATH}"
     sh ${PWD}/start_gpfdist.sh $PORT "${GEN_DATA_PATH}" ${env_file}
@@ -211,10 +210,10 @@ for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "
                 done
             done
         else
-            log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -f ${PWD}/${i} -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\" | grep INSERT | awk -F ' ' '{print \$3}'"
+            log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -f ${PWD}/${i} -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\" -v DB_EXT_SCHEMA_NAME=\"${DB_EXT_SCHEMA_NAME}\" | grep INSERT | awk -F ' ' '{print \$3}'"
             tuples=$(
                 psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -f "${PWD}/${i}" \
-                    -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" | grep INSERT | awk -F ' ' '{print $3}'
+                    -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" -v DB_EXT_SCHEMA_NAME="${DB_EXT_SCHEMA_NAME}" | grep INSERT | awk -F ' ' '{print $3}'
                 exit ${PIPESTATUS[0]}
             )
         fi
@@ -232,7 +231,7 @@ wait
 # Close the file descriptor
 exec 5>&-
 
-log_time "finished loading tables"
+log_time "Finished loading tables"
 
 log_time "Starting post loading processing..."
 
@@ -242,6 +241,8 @@ if [ "${DB_VERSION}" == "postgresql" ]; then
   psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -f ${PWD}/100.postgresql.indexkeys.sql -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}"
   psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -c "SELECT tablename, indexname FROM pg_indexes WHERE schemaname = '${DB_SCHEMA_NAME}' ORDER BY tablename, indexname;"
 fi
+
+log_time "Clean up gpfdist"
 
 if [ "${RUN_MODEL}" == "remote" ]; then
   log_time "Clean up gpfdist on client"

@@ -1,5 +1,5 @@
 #!/bin/bash
-#set -e
+set -e
 
 PWD=$(get_pwd ${BASH_SOURCE[0]})
 

@@ -1,1 +1,1 @@
-INSERT INTO :DB_SCHEMA_NAME.catalog_page SELECT * FROM ext_tpcds.catalog_page;
+INSERT INTO :DB_SCHEMA_NAME.catalog_page SELECT * FROM :DB_EXT_SCHEMA_NAME.catalog_page;

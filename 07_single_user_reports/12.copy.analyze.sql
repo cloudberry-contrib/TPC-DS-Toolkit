@@ -1,1 +1,1 @@
-\COPY tpcds_reports.analyze FROM :LOGFILE WITH DELIMITER '|';
+\COPY :report_schema.analyze FROM :LOGFILE WITH DELIMITER '|';

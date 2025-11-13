@@ -102,18 +102,44 @@ export -f get_pwd
 
 function get_gpfdist_port() {
   
-  if [ "$RUN_MODEL" == "local" ]; then
-    all_ports=$(psql ${PSQL_OPTIONS} -t -A -c "select min(case when role = 'p' then port else 999999 end), min(case when role = 'm' then port else 999999 end) from gp_segment_configuration where content >= 0")
-    primary_base=$(echo ${all_ports} | awk -F '|' '{print $1}' | head -c1)
-    mirror_base=$(echo $all_ports | awk -F '|' '{print $2}' | head -c1)
-
-    for i in $(seq 3 6); do
-      if [ "${primary_base}" -ne "${i}" ] && [ "$mirror_base" -ne "${i}" ]; then
-        GPFDIST_PORT="${i}888"
-        export GPFDIST_PORT
-        break
+  if [ "$RUN_MODEL" = "local" ]; then
+    # Attempt to get port information with error handling
+    if all_ports=$(psql ${PSQL_OPTIONS} -t -A -c "select min(case when role = 'p' then port else 999999 end), min(case when role = 'm' then port else 999999 end) from gp_segment_configuration where content >= 0"); then
+      # Extract the first digit of port numbers and validate if they are numeric
+      primary_base=$(echo ${all_ports} | awk -F '|' '{print $1}' | head -c1)
+      mirror_base=$(echo $all_ports | awk -F '|' '{print $2}' | head -c1)
+      
+      # Validate if extracted values are numeric
+      if ! [[ "$primary_base" =~ ^[0-9]$ ]] || ! [[ "$mirror_base" =~ ^[0-9]$ ]]; then
+        # Use default values if not numeric
+        primary_base=6
+        mirror_base=6
       fi
-    done
+
+      # Flag to track if a usable port is found
+      port_found=false
+      for i in $(seq 3 5); do
+        if [ "${primary_base}" -ne "${i}" ] && [ "${mirror_base}" -ne "${i}" ]; then
+          GPFDIST_PORT="${i}$(echo $(( $RANDOM % 1000 )) | awk '{printf "%03d", $1}')"
+          port_found=true
+          break
+        fi
+      done
+      
+      # Use default port range if no usable port is found
+      if [ "$port_found" = false ]; then
+        GPFDIST_PORT="3$(echo $(( $RANDOM % 1000 )) | awk '{printf "%03d", $1}')"
+      fi
+      
+      export GPFDIST_PORT
+    else
+      # Use default port if database query fails
+      GPFDIST_PORT="3$(echo $(( $RANDOM % 1000 )) | awk '{printf "%03d", $1}')"
+      export GPFDIST_PORT
+    fi
+  else
+    GPFDIST_PORT="3$(echo $(( $RANDOM % 1000 )) | awk '{printf "%03d", $1}')"
+    export GPFDIST_PORT # Also need to export in non-local mode
   fi
 }
 export -f get_gpfdist_port

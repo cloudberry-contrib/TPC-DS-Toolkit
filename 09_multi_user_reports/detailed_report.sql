@@ -31,7 +31,7 @@ from	(
 	case when split_part(description, '.', 1) = '9' and tuples = -1 then true else false end as session_9_error,
 	case when split_part(description, '.', 1) = '10' then round(extract('epoch' from duration)) else 0 end as session_10,
 	case when split_part(description, '.', 1) = '10' and tuples = -1 then true else false end as session_10_error
-	from tpcds_testing.sql
+	from :multi_user_report_schema.sql
 	) as sub
 group by query_id
 order by 1;
