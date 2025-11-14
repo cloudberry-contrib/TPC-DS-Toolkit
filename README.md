@@ -1,6 +1,6 @@
 # Decision Support Benchmark for Cloudberry Database
 
-[![TPC-DS](https://img.shields.io/badge/TPC--DS-v3.2.0-blue)](http://www.tpc.org/tpcds/)
+[![TPC-DS](https://img.shields.io/badge/TPC--DS-v4.0.0-blue)](http://www.tpc.org/tpcds/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 
 A comprehensive tool for running TPC-DS benchmarks on Cloudberry / HashData / Greenplum / PostgreSQL. Originally derived from [Pivotal TPC-DS](https://github.com/pivotal/TPC-DS).
@@ -80,11 +80,12 @@ Please refer to the [QuickStartCloud.md](tpcds_tools/QuickStartCloud.md) for mor
 
 | Version | Date | Specification |
 |---------|------|---------------|
+| 4.0.0 | 2023/12/15 | [PDF](http://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v4.0.0.pdf) |
 | 3.2.0 | 2021/06/15 | [PDF](http://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v3.2.0.pdf) |
 | 2.1.0 | 2015/11/12 | [PDF](http://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v2.1.0.pdf) |
 | 1.3.1 | 2015/02/19 | [PDF](http://www.tpc.org/tpc_documents_current_versions/pdf/tpc-ds_v1.3.1.pdf) |
 
-This tool uses TPC-DS 3.2.0 as of version 1.2.
+This tool uses TPC-DS 4.0.0 as of the latest version.
 
 ## Prerequisites
 
