@@ -18,21 +18,25 @@ compile_flag="true"
 
 function make_tpc() {
   #compile the tools
-  cd ${PWD}/tools
+  unzip -o -d ${TPC_DS_DIR}/00_compile_tpcds/ ${TPC_DS_DIR}/00_compile_tpcds/DSGen-software-code-4.0.0.zip
+  cd ${TPC_DS_DIR}/00_compile_tpcds/DSGen-software-code-4.0.0/tools/
   rm -f ./*.o
   make clean
   ADDITIONAL_CFLAGS_OPTION="-g -Wno-unused-function -Wno-unused-but-set-variable -Wno-format -fcommon" LDFLAGS="-Wl,--allow-multiple-definition" make
-  cd ..
+  cp dsqgen ${TPC_DS_DIR}/00_compile_tpcds/tools/
+  cp dsdgen ${TPC_DS_DIR}/00_compile_tpcds/tools/
+  cp tpcds.idx ${TPC_DS_DIR}/00_compile_tpcds/tools/
+  cd ../../
 }
 
 
 function copy_tpc() {
-  cp ${PWD}/tools/dsqgen ../*_sql/
-  cp ${PWD}/tools/dsqgen ../*_multi_user/
-  cp ${PWD}/tools/dsdgen ../*_gen_data/
-  cp ${PWD}/tools/tpcds.idx ../*_sql/
-  cp ${PWD}/tools/tpcds.idx ../*_multi_user/
-  cp ${PWD}/tools/tpcds.idx ../*_gen_data/
+  cp ${TPC_DS_DIR}/00_compile_tpcds/tools/dsqgen ../*_sql/
+  cp ${TPC_DS_DIR}/00_compile_tpcds/tools/dsqgen ../*_multi_user/
+  cp ${TPC_DS_DIR}/00_compile_tpcds/tools/dsdgen ../*_gen_data/
+  cp ${TPC_DS_DIR}/00_compile_tpcds/tools/tpcds.idx ../*_sql/
+  cp ${TPC_DS_DIR}/00_compile_tpcds/tools/tpcds.idx ../*_multi_user/
+  cp ${TPC_DS_DIR}/00_compile_tpcds/tools/tpcds.idx ../*_gen_data/
 
   #copy the compiled dsdgen program to the segment nodes when running in LOCAL mode
   if [ "${RUN_MODEL}" == "local" ]; then
@@ -71,7 +75,7 @@ function copy_queries() {
 function check_binary() {
   set +e
   
-  cd ${PWD}/tools/
+  cd ${TPC_DS_DIR}/00_compile_tpcds/tools/
   cp -f dsqgen.${CHIP_TYPE} dsqgen
   cp -f dsdgen.${CHIP_TYPE} dsdgen
   chmod +x dsqgen
