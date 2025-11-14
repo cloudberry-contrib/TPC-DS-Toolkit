@@ -63,7 +63,7 @@
                  where d_date_sk = ss_sold_date_sk
                    and d_moy=[MONTH]
                    and d_year=[YEAR]
-                 ) as tmp,time_dim
+                 ) tmp,time_dim
  where
    sold_item_sk = i_item_sk
    and i_manager_id=1
@@ -71,5 +71,4 @@
    and (t_meal_time = 'breakfast' or t_meal_time = 'dinner')
  group by i_brand, i_brand_id,t_hour,t_minute
  order by ext_price desc, i_brand_id
- limit 100
  ;

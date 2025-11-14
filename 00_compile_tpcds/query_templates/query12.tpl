@@ -33,9 +33,9 @@
 -- Contributors:
 -- 
 
-Define YEAR=random(1998,2002,uniform);
-Define SDATE=date([YEAR]+"-01-01",[YEAR]+"-07-01",sales);
-Define CATEGORY=ulist(dist(categories,1,1),3);
+define YEAR=random(1998,2002,uniform);
+define SDATE=date([YEAR]+"-01-01",[YEAR]+"-07-01",sales);
+define CATEGORY=ulist(dist(categories,1,1),3);
 define _LIMIT=100;
 
 [_LIMITA] select [_LIMITB] i_item_id
@@ -55,7 +55,7 @@ where
   	and i_category in ('[CATEGORY.1]', '[CATEGORY.2]', '[CATEGORY.3]')
   	and ws_sold_date_sk = d_date_sk
 	and d_date between cast('[SDATE]' as date) 
-				and (cast('[SDATE]' as date) + '30 days'::interval)
+				and (cast('[SDATE]' as date) + 30 days)
 group by 
 	i_item_id
         ,i_item_desc 

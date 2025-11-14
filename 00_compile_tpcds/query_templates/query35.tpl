@@ -45,19 +45,19 @@
   cd_marital_status,
   cd_dep_count,
   count(*) cnt1,
-  [AGGONE](cd_dep_count),
-  [AGGTWO](cd_dep_count),
-  [AGGTHREE](cd_dep_count),
+  [AGGONE](cd_dep_count) aggone1,
+  [AGGTWO](cd_dep_count) aggtwo1,
+  [AGGTHREE](cd_dep_count) aggthree1,
   cd_dep_employed_count,
   count(*) cnt2,
-  [AGGONE](cd_dep_employed_count),
-  [AGGTWO](cd_dep_employed_count),
-  [AGGTHREE](cd_dep_employed_count),
+  [AGGONE](cd_dep_employed_count) aggone2,
+  [AGGTWO](cd_dep_employed_count) aggtwo2,
+  [AGGTHREE](cd_dep_employed_count) aggthree2,
   cd_dep_college_count,
   count(*) cnt3,
-  [AGGONE](cd_dep_college_count),
-  [AGGTWO](cd_dep_college_count),
-  [AGGTHREE](cd_dep_college_count)
+  [AGGONE](cd_dep_college_count) aggone3,
+  [AGGTWO](cd_dep_college_count) aggtwo3,
+  [AGGTHREE](cd_dep_college_count) aggthree3
  from
   customer c,customer_address ca,customer_demographics
  where
