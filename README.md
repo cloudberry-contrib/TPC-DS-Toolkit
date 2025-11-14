@@ -449,7 +449,7 @@ Affected queries: 64, 34, and 71.
    - Enable vectorization if supported
    - Use appropriate storage options for your workload
    - Consider partitioning for large tables
-   - Adjust database parameters as referred to: [tpcds_set_gucs](tpcds_tools/tpcds_set_gucs.sh)
+   - Adjust database parameters as referred to: [set_gucs](tpcds_tools/set_gucs.sh)
 
 ### Logs and Diagnostics
 
