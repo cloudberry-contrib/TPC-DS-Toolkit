@@ -18,7 +18,7 @@ compile_flag="true"
 
 function make_tpc() {
   #compile the tools
-  unzip -d ${TPC_DS_DIR}/00_compile_tpcds/ ${TPC_DS_DIR}/00_compile_tpcds/DSGen-software-code-4.0.0.zip
+  unzip -o -d ${TPC_DS_DIR}/00_compile_tpcds/ ${TPC_DS_DIR}/00_compile_tpcds/DSGen-software-code-4.0.0.zip
   cd ${TPC_DS_DIR}/00_compile_tpcds/DSGen-software-code-4.0.0/tools/
   rm -f ./*.o
   make clean
