@@ -20,7 +20,8 @@ function make_tpc() {
   #compile the tools
   cd ${PWD}/tools
   rm -f ./*.o
-  ADDITIONAL_CFLAGS_OPTION="-g -Wno-unused-function -Wno-unused-but-set-variable -Wno-format -fcommon" make
+  make clean
+  ADDITIONAL_CFLAGS_OPTION="-g -Wno-unused-function -Wno-unused-but-set-variable -Wno-format -fcommon" LDFLAGS="-Wl,--allow-multiple-definition" make
   cd ..
 }
 
