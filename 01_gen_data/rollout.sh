@@ -68,49 +68,55 @@ function copy_generate_data() {
 }
 
 function gen_data() {
+  if [ "${USING_CUSTOM_GEN_PATH_IN_LOCAL_MODE}" != "true" ]; then
+    log_time "Using default setting as segment data path in local mode on segments."
 
-  PARALLEL=$(gpstate | grep "Total primary segments" | awk -F '=' '{print $2}')
-  if [ "${PARALLEL}" == "" ]; then
-    log_time "ERROR: Unable to determine how many primary segments are in the cluster using gpstate."
+    PARALLEL=$(gpstate | grep "Total primary segments" | awk -F '=' '{print $2}')
+    if [ "${PARALLEL}" == "" ]; then
+      log_time "ERROR: Unable to determine how many primary segments are in the cluster using gpstate."
+      exit 1
+    fi
+  
+    #Actual PARALLEL should be $LOCAL_GEN_PARALLEL*$PARALLEL
+    PARALLEL=$((LOCAL_GEN_PARALLEL * PARALLEL))
+    
+    log_time "Number of Generate Data Parallel Process is: $PARALLEL"
+  
+    
+    if [ "${DB_VERSION}" == "gpdb_4_3" ] || [ "${DB_VERSION}" == "gpdb_5" ]; then
+      SQL_QUERY="select row_number() over(), g.hostname, p.fselocation as path from gp_segment_configuration g join pg_filespace_entry p on g.dbid = p.fsedbid join pg_tablespace t on t.spcfsoid = p.fsefsoid where g.content >= 0 and g.role = '${GPFDIST_LOCATION}' and t.spcname = 'pg_default' order by 1, 2, 3"  
+    else
+      SQL_QUERY="select row_number() over(), g.hostname, g.datadir from gp_segment_configuration g where g.content >= 0 and g.role = '${GPFDIST_LOCATION}' order by 1, 2, 3"
+    
+    fi
+    
+    log_time "Clean up previous data generation folder on segments."
+    for h in $(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -c "${SQL_QUERY}"); do
+      EXT_HOST=$(echo ${h} | awk -F '|' '{print $2}')
+      SEG_DATA_PATH=$(echo ${h} | awk -F '|' '{print $3}' | sed 's#//#/#g')
+      log_time "ssh -n ${EXT_HOST} \"rm -rf ${SEG_DATA_PATH}/dsbenchmark\""
+      ssh -n ${EXT_HOST} "rm -rf ${SEG_DATA_PATH}/dsbenchmark"
+      log_time "ssh -n ${EXT_HOST} \"mkdir -p ${SEG_DATA_PATH}/dsbenchmark\""
+      ssh -n ${EXT_HOST} "mkdir -p ${SEG_DATA_PATH}/dsbenchmark"
+    done
+    
+    CHILD=1
+    for i in $(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -c "${SQL_QUERY}"); do
+      EXT_HOST=$(echo ${i} | awk -F '|' '{print $2}')
+      SEG_DATA_PATH=$(echo ${i} | awk -F '|' '{print $3}' | sed 's#//#/#g')
+  
+      for ((j=1; j<=LOCAL_GEN_PARALLEL; j++)); do
+        GEN_DATA_PATH="${SEG_DATA_PATH}/dsbenchmark/${CHILD}"
+        log_time "ssh -n ${EXT_HOST} \"bash -c 'cd ~/; ./generate_data.sh ${GEN_DATA_SCALE} ${CHILD} ${PARALLEL} ${GEN_DATA_PATH} ${RNGSEED} > /tmp/tpcds.generate_data.${CHILD}.log 2>&1 &'\""
+        ssh -n ${EXT_HOST} "bash -c 'cd ~/; ./generate_data.sh ${GEN_DATA_SCALE} ${CHILD} ${PARALLEL} ${GEN_DATA_PATH} ${RNGSEED} > /tmp/tpcds.generate_data.${CHILD}.log 2>&1 &'" &
+        CHILD=$((CHILD + 1))
+      done
+    done
+    wait
+  else
+    log_time "DO NOT USE, SET to false and re-run the script. Using default setting as CLIENT_GEN_PATH in local mode on segments."
     exit 1
   fi
-
-  #Actual PARALLEL should be $LOCAL_GEN_PARALLEL*$PARALLEL
-  PARALLEL=$((LOCAL_GEN_PARALLEL * PARALLEL))
-  
-  log_time "Number of Generate Data Parallel Process is: $PARALLEL"
-
-  
-  if [ "${DB_VERSION}" == "gpdb_4_3" ] || [ "${DB_VERSION}" == "gpdb_5" ]; then
-    SQL_QUERY="select row_number() over(), g.hostname, p.fselocation as path from gp_segment_configuration g join pg_filespace_entry p on g.dbid = p.fsedbid join pg_tablespace t on t.spcfsoid = p.fsefsoid where g.content >= 0 and g.role = '${GPFDIST_LOCATION}' and t.spcname = 'pg_default' order by 1, 2, 3"  
-  else
-    SQL_QUERY="select row_number() over(), g.hostname, g.datadir from gp_segment_configuration g where g.content >= 0 and g.role = '${GPFDIST_LOCATION}' order by 1, 2, 3"
-  
-  fi
-  
-  log_time "Clean up previous data generation folder on segments."
-  for h in $(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -c "${SQL_QUERY}"); do
-    EXT_HOST=$(echo ${h} | awk -F '|' '{print $2}')
-    SEG_DATA_PATH=$(echo ${h} | awk -F '|' '{print $3}' | sed 's#//#/#g')
-    log_time "ssh -n ${EXT_HOST} \"rm -rf ${SEG_DATA_PATH}/dsbenchmark\""
-    ssh -n ${EXT_HOST} "rm -rf ${SEG_DATA_PATH}/dsbenchmark"
-    log_time "ssh -n ${EXT_HOST} \"mkdir -p ${SEG_DATA_PATH}/dsbenchmark\""
-    ssh -n ${EXT_HOST} "mkdir -p ${SEG_DATA_PATH}/dsbenchmark"
-  done
-  
-  CHILD=1
-  for i in $(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -c "${SQL_QUERY}"); do
-    EXT_HOST=$(echo ${i} | awk -F '|' '{print $2}')
-    SEG_DATA_PATH=$(echo ${i} | awk -F '|' '{print $3}' | sed 's#//#/#g')
-
-    for ((j=1; j<=LOCAL_GEN_PARALLEL; j++)); do
-      GEN_DATA_PATH="${SEG_DATA_PATH}/dsbenchmark/${CHILD}"
-      log_time "ssh -n ${EXT_HOST} \"bash -c 'cd ~/; ./generate_data.sh ${GEN_DATA_SCALE} ${CHILD} ${PARALLEL} ${GEN_DATA_PATH} ${RNGSEED} > /tmp/tpcds.generate_data.${CHILD}.log 2>&1 &'\""
-      ssh -n ${EXT_HOST} "bash -c 'cd ~/; ./generate_data.sh ${GEN_DATA_SCALE} ${CHILD} ${PARALLEL} ${GEN_DATA_PATH} ${RNGSEED} > /tmp/tpcds.generate_data.${CHILD}.log 2>&1 &'" &
-      CHILD=$((CHILD + 1))
-    done
-  done
-  wait
 }
 
 step="gen_data"
