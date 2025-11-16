@@ -141,6 +141,25 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
          counter=$((counter + 1))
        done
        LOCATION+="'"
+     elif [ "${RUN_MODEL}" == "local" ] && [ "${USING_CUSTOM_GEN_PATH_IN_LOCAL_MODE}" == "true" ]; then
+       # Handle local mode with custom CLIENT_GEN_PATH
+       EXT_HOST=$(hostname -I | awk '{print $1}')
+       # Split CLIENT_GEN_PATH into array of paths to support multiple directories
+       IFS=' ' read -ra GEN_PATHS <<< "${CLIENT_GEN_PATH}"
+       
+       counter=0
+       PORT=${GPFDIST_PORT}
+       for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
+         if [ "${counter}" -eq "0" ]; then
+           LOCATION="'"
+         else
+           LOCATION+="', '"
+         fi
+         LOCATION+="gpfdist://${EXT_HOST}:${PORT}/${table_name}_[0-9]*_[0-9]*.dat"
+         let PORT=$PORT+1
+         counter=$((counter + 1))
+       done
+       LOCATION+="'"
       else
         if [ "${DB_VERSION}" == "gpdb_4_3" ] || [ "${DB_VERSION}" == "gpdb_5" ]; then
           SQL_QUERY="select rank() over (partition by g.hostname order by p.fselocation), g.hostname from gp_segment_configuration g join pg_filespace_entry p on g.dbid = p.fsedbid join pg_tablespace t on t.spcfsoid where g.content >= 0 and g.role = '${GPFDIST_LOCATION}' and t.spcname = 'pg_default' order by g.hostname"
