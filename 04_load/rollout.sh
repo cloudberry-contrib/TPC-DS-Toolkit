@@ -53,6 +53,7 @@ function start_gpfdist() {
     for EXT_HOST in $(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -c "${SQL_QUERY}"); do
       # For each path, start a gpfdist instance
       for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
+        GEN_DATA_PATH="${GEN_DATA_PATH}/dsbenchmark"
         PORT=$((GPFDIST_PORT + flag))
         let flag=$flag+1
         log_time "ssh -n ${EXT_HOST} \"bash -c 'cd ~${ADMIN_USER}; ./start_gpfdist.sh $PORT ${GEN_DATA_PATH} ${env_file}'\""
