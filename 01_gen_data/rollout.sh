@@ -230,16 +230,16 @@ if [ "${GEN_NEW_DATA}" == "true" ]; then
 
       log_time "Number of data generation paths: ${TOTAL_PATHS}"
       log_time "Parallel processes per path: ${GEN_DATA_PARALLEL}"
-      log_time "Total parallel processes: $((TOTAL_PATHS * PARALLEL))"
+      log_time "Total parallel processes: ${PARALLEL}"
       
       # Prepare each data generation path
       for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
         if [[ ! -d "${GEN_DATA_PATH}" && ! -L "${GEN_DATA_PATH}" ]]; then
-          log_time "mkdir ${GEN_DATA_PATH}"
-          mkdir -p ${GEN_DATA_PATH}
+          log_time "mkdir ${GEN_DATA_PATH}/dsbenchmark"
+          mkdir -p ${GEN_DATA_PATH}/dsbenchmark
         fi
-        rm -rf ${GEN_DATA_PATH}/*
-        mkdir -p ${GEN_DATA_PATH}/logs
+        rm -rf ${GEN_DATA_PATH}/dsbenchmark/*
+        mkdir -p ${GEN_DATA_PATH}/dsbenchmark/logs
       done
 
       # For each path, start GEN_DATA_PARALLEL processes
