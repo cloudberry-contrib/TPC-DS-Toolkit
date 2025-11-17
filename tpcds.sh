@@ -46,6 +46,8 @@ if [ "${RUN_MODEL}" != "cloud" ]; then
 fi
 
 if [ "${RUN_MODEL}" != "local" ]; then
+  export CUSTOM_GEN_PATH="$(echo "${CUSTOM_GEN_PATH}" | tr '[:upper:]' '[:lower:]')"
+
   IFS=' ' read -ra GEN_PATHS <<< "${CUSTOM_GEN_PATH}"
   
   TOTAL_PATHS=${#GEN_PATHS[@]}
