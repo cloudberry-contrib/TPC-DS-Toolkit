@@ -41,10 +41,10 @@ export RUN_MODEL="cloud"
 export PSQL_OPTIONS="-h mdw -p 5432 -U gpadmin -d cbdb"
 
 ## Line 13: Set the path on the client host where the data is generated. Make sure the path exists and has enough space.
-export CLIENT_GEN_PATH="/tmp/dsbenchmark"
+export CUSTOM_GEN_PATH="/tmp/dsbenchmark"
 
 ## Line 14: Set the parallelism for data generation on the client host.
-export CLIENT_GEN_PARALLEL="2"
+export GEN_DATA_PARALLEL="2"
 
 ## Line 25: GEN_DATA_SCALE set to 1000, indicating generation of 1000GB test data
 export GEN_DATA_SCALE="1000"

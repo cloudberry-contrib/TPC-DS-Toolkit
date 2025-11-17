@@ -46,15 +46,15 @@ if [ "${RUN_MODEL}" != "cloud" ]; then
 fi
 
 if [ "${RUN_MODEL}" != "local" ]; then
-  IFS=' ' read -ra GEN_PATHS <<< "${CLIENT_GEN_PATH}"
+  IFS=' ' read -ra GEN_PATHS <<< "${CUSTOM_GEN_PATH}"
   
   TOTAL_PATHS=${#GEN_PATHS[@]}
   if [ ${TOTAL_PATHS} -eq 0 ]; then
-    log_time "ERROR: CLIENT_GEN_PATH is empty or not set"
+    log_time "ERROR: CUSTOM_GEN_PATH is empty or not set"
     exit 1
   fi
-  # Check for duplicate directories in CLIENT_GEN_PATH and remove them
-  log_time "Checking for duplicate directories in CLIENT_GEN_PATH..."
+  # Check for duplicate directories in CUSTOM_GEN_PATH and remove them
+  log_time "Checking for duplicate directories in CUSTOM_GEN_PATH..."
   # Using string method instead of associative array for better compatibility
   declare -a UNIQUE_GEN_PATHS
   duplicates_found=false
@@ -84,9 +84,9 @@ if [ "${RUN_MODEL}" != "local" ]; then
   GEN_PATHS=("${UNIQUE_GEN_PATHS[@]}")
   
   # Reconstruct the path string and export
-  CLIENT_GEN_PATH=$(IFS=' '; echo "${GEN_PATHS[*]}")
-  export CLIENT_GEN_PATH
-  log_time "CLIENT_GEN_PATH set to: ${CLIENT_GEN_PATH}"
+  CUSTOM_GEN_PATH=$(IFS=' '; echo "${GEN_PATHS[*]}")
+  export CUSTOM_GEN_PATH
+  log_time "CUSTOM_GEN_PATH set to: ${CUSTOM_GEN_PATH}"
 fi
 
 # Get a random port for gpfdist

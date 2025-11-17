@@ -77,8 +77,8 @@ function gen_data() {
       exit 1
     fi
   
-    #Actual PARALLEL should be $LOCAL_GEN_PARALLEL*$PARALLEL
-    PARALLEL=$((LOCAL_GEN_PARALLEL * PARALLEL))
+    #Actual PARALLEL should be $GEN_DATA_PARALLEL*$PARALLEL
+    PARALLEL=$((GEN_DATA_PARALLEL * PARALLEL))
     
     log_time "Number of Generate Data Parallel Process is: $PARALLEL"
   
@@ -105,7 +105,7 @@ function gen_data() {
       EXT_HOST=$(echo ${i} | awk -F '|' '{print $2}')
       SEG_DATA_PATH=$(echo ${i} | awk -F '|' '{print $3}' | sed 's#//#/#g')
   
-      for ((j=1; j<=LOCAL_GEN_PARALLEL; j++)); do
+      for ((j=1; j<=GEN_DATA_PARALLEL; j++)); do
         GEN_DATA_PATH="${SEG_DATA_PATH}/dsbenchmark/${CHILD}"
         log_time "ssh -n ${EXT_HOST} \"bash -c 'cd ~/; ./generate_data.sh ${GEN_DATA_SCALE} ${CHILD} ${PARALLEL} ${GEN_DATA_PATH} ${RNGSEED} > /tmp/tpcds.generate_data.${CHILD}.log 2>&1 &'\""
         ssh -n ${EXT_HOST} "bash -c 'cd ~/; ./generate_data.sh ${GEN_DATA_SCALE} ${CHILD} ${PARALLEL} ${GEN_DATA_PATH} ${RNGSEED} > /tmp/tpcds.generate_data.${CHILD}.log 2>&1 &'" &
@@ -114,7 +114,7 @@ function gen_data() {
     done
     wait
   else
-    log_time "Using CLIENT_GEN_PATH in local mode on segments."
+    log_time "Using CUSTOM_GEN_PATH in local mode on segments."
     
     # Get segment hosts from database
     if [ "${DB_VERSION}" == "gpdb_4_3" ] || [ "${DB_VERSION}" == "gpdb_5" ]; then
@@ -126,12 +126,12 @@ function gen_data() {
     # Generate segment hosts file
     psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -c "${SQL_QUERY}" > ${TPC_DS_DIR}/segment_hosts.txt
     
-    # Split CLIENT_GEN_PATH into array of paths
-    IFS=' ' read -ra GEN_PATHS <<< "${CLIENT_GEN_PATH}"
+    # Split CUSTOM_GEN_PATH into array of paths
+    IFS=' ' read -ra GEN_PATHS <<< "${CUSTOM_GEN_PATH}"
     TOTAL_PATHS=${#GEN_PATHS[@]}
     
     if [ ${TOTAL_PATHS} -eq 0 ]; then
-      log_time "ERROR: CLIENT_GEN_PATH is empty or not set"
+      log_time "ERROR: CUSTOM_GEN_PATH is empty or not set"
       exit 1
     fi
     
@@ -144,12 +144,12 @@ function gen_data() {
     
     log_time "Number of segment hosts: ${SEGMENT_HOSTS_COUNT}"
     log_time "Number of data generation paths: ${TOTAL_PATHS}"
-    log_time "CLIENT_GEN_PATH: ${CLIENT_GEN_PATH}"
+    log_time "CUSTOM_GEN_PATH: ${CUSTOM_GEN_PATH}"
     
     # Calculate total parallel processes
-    # Each path gets CLIENT_GEN_PARALLEL processes per host
-    PARALLEL=$((TOTAL_PATHS * CLIENT_GEN_PARALLEL * SEGMENT_HOSTS_COUNT))
-    log_time "Total parallel processes: ${PARALLEL} (paths: ${TOTAL_PATHS} * parallel_per_path: ${CLIENT_GEN_PARALLEL} * hosts: ${SEGMENT_HOSTS_COUNT})"
+    # Each path gets GEN_DATA_PARALLEL processes per host
+    PARALLEL=$((TOTAL_PATHS * GEN_DATA_PARALLEL * SEGMENT_HOSTS_COUNT))
+    log_time "Total parallel processes: ${PARALLEL} (paths: ${TOTAL_PATHS} * parallel_per_path: ${GEN_DATA_PARALLEL} * hosts: ${SEGMENT_HOSTS_COUNT})"
     
     # Copy generate_data.sh to all segment hosts
     copy_generate_data
@@ -184,9 +184,9 @@ function gen_data() {
       
       log_time "Starting data generation on host: ${HOST}"
       
-      # For each path, start CLIENT_GEN_PARALLEL processes
+      # For each path, start GEN_DATA_PARALLEL processes
       for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
-        for ((j=1; j<=CLIENT_GEN_PARALLEL; j++)); do
+        for ((j=1; j<=GEN_DATA_PARALLEL; j++)); do
           GEN_DATA_SUBPATH="${GEN_DATA_PATH}/dsbenchmark/${GLOBAL_CHILD}"
           log_time "ssh -n ${HOST} \"bash -c 'cd ~/; ./generate_data.sh ${GEN_DATA_SCALE} ${GLOBAL_CHILD} ${PARALLEL} ${GEN_DATA_SUBPATH} ${RNGSEED} > /tmp/tpcds.generate_data.${GLOBAL_CHILD}.log 2>&1 &'\""
           ssh -n ${HOST} "bash -c 'cd ~/; ./generate_data.sh ${GEN_DATA_SCALE} ${GLOBAL_CHILD} ${PARALLEL} ${GEN_DATA_SUBPATH} ${RNGSEED} > /tmp/tpcds.generate.data.${GLOBAL_CHILD}.log 2>&1 &'" &
@@ -216,14 +216,14 @@ export table_name
 
 if [ "${GEN_NEW_DATA}" == "true" ]; then
     if [ "${RUN_MODEL}" != "local" ]; then
-      PARALLEL=${CLIENT_GEN_PARALLEL}
+      PARALLEL=${GEN_DATA_PARALLEL}
       
-      # Split CLIENT_GEN_PATH into array of paths
-      IFS=' ' read -ra GEN_PATHS <<< "${CLIENT_GEN_PATH}"
+      # Split CUSTOM_GEN_PATH into array of paths
+      IFS=' ' read -ra GEN_PATHS <<< "${CUSTOM_GEN_PATH}"
       TOTAL_PATHS=${#GEN_PATHS[@]}
       
       if [ ${TOTAL_PATHS} -eq 0 ]; then
-        log_time "ERROR: CLIENT_GEN_PATH is empty or not set"
+        log_time "ERROR: CUSTOM_GEN_PATH is empty or not set"
         exit 1
       fi
       

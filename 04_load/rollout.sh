@@ -34,11 +34,11 @@ function start_gpfdist() {
   sleep 1
 
   if [ "${USING_CUSTOM_GEN_PATH_IN_LOCAL_MODE}" == "true" ]; then
-    # Handle custom CLIENT_GEN_PATH in local mode
-    IFS=' ' read -ra GEN_PATHS <<< "${CLIENT_GEN_PATH}"
+    # Handle custom CUSTOM_GEN_PATH in local mode
+    IFS=' ' read -ra GEN_PATHS <<< "${CUSTOM_GEN_PATH}"
     
     if [ ${#GEN_PATHS[@]} -eq 0 ]; then
-      log_time "ERROR: CLIENT_GEN_PATH is empty or not set"
+      log_time "ERROR: CUSTOM_GEN_PATH is empty or not set"
       exit 1
     fi
     
@@ -85,11 +85,11 @@ function start_gpfdist() {
 
 if [ "${RUN_MODEL}" == "remote" ]; then
   sh ${PWD}/stop_gpfdist.sh
-  # Split CLIENT_GEN_PATH into array of paths to support multiple directories
-  IFS=' ' read -ra GEN_PATHS <<< "${CLIENT_GEN_PATH}"
+  # Split CUSTOM_GEN_PATH into array of paths to support multiple directories
+  IFS=' ' read -ra GEN_PATHS <<< "${CUSTOM_GEN_PATH}"
   
   if [ ${#GEN_PATHS[@]} -eq 0 ]; then
-    log_time "ERROR: CLIENT_GEN_PATH is empty or not set"
+    log_time "ERROR: CUSTOM_GEN_PATH is empty or not set"
     exit 1
   fi
 
@@ -214,12 +214,12 @@ for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "
         fi
 
         if [ "${RUN_MODEL}" == "cloud" ]; then
-            # Split CLIENT_GEN_PATH into array of paths
-            IFS=' ' read -ra GEN_PATHS <<< "${CLIENT_GEN_PATH}"
+            # Split CUSTOM_GEN_PATH into array of paths
+            IFS=' ' read -ra GEN_PATHS <<< "${CUSTOM_GEN_PATH}"
             TOTAL_PATHS=${#GEN_PATHS[@]}
             
             if [ ${TOTAL_PATHS} -eq 0 ]; then
-                log_time "ERROR: CLIENT_GEN_PATH is empty or not set"
+                log_time "ERROR: CUSTOM_GEN_PATH is empty or not set"
                 exit 1
             fi
             

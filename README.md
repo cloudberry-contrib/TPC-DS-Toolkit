@@ -122,8 +122,8 @@ With this mode, all data will be generated on the client machine, and data will 
    ```bash
    export RANDOM_DISTRIBUTION="true"
    export TABLE_STORAGE_OPTIONS="compresstype=zstd, compresslevel=5"
-   export CLIENT_GEN_PATH="/tmp/dsbenchmark" 
-   export CLIENT_GEN_PARALLEL="2"
+   export CUSTOM_GEN_PATH="/tmp/dsbenchmark" 
+   export GEN_DATA_PARALLEL="2"
    ```
 > The following conventions are used in this document: mdw for the coordinator node, and sdw1..n for segment nodes.
 
@@ -206,11 +206,9 @@ export RUN_MODEL="cloud"    # "local" or "cloud"
 
 # Remote cluster connection
 export PSQL_OPTIONS="-h <host> -p <port>"
-export CLIENT_GEN_PATH="/tmp/dsbenchmark"  # Location for data generation, separated by space for multiple paths.
-export CLIENT_GEN_PARALLEL="2"             # Number of parallel data generation processes for each path.
+export CUSTOM_GEN_PATH="/tmp/dsbenchmark"  # Location for data generation, separated by space for multiple paths.
+export GEN_DATA_PARALLEL="2"             # Number of parallel data generation processes for each path.
 
-# Local mode settings
-export LOCAL_GEN_PARALLEL="1"              # Number of parallel processes on each segment for local mode
 ```
 
 ### Benchmark Options
@@ -360,7 +358,7 @@ For optimal performance:
 3. **Concurrency Tuning**
    ```bash
    # Adjust based on available CPU cores
-   export CLIENT_GEN_PARALLEL="$(nproc)"
+   export GEN_DATA_PARALLEL="$(nproc)"
    export MULTI_USER_COUNT="$(( $(nproc) / 2 ))"
    ```
 
@@ -436,7 +434,7 @@ Affected queries: 64, 34, and 71.
 
 3. **Data Generation Failures**  
    - Confirm successful compilation of `dsdgen`
-   - Verify `CLIENT_GEN_PATH` points to a valid, writable directory
+   - Verify `CUSTOM_GEN_PATH` points to a valid, writable directory
    - Check available disk space
 
 4. **Query Execution Errors**  

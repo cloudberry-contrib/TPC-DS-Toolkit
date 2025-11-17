@@ -34,18 +34,15 @@ export RUN_COMPILE_TPCDS="true"
 # should be true under normal circumstances.
 export RUN_GEN_DATA="true"
 export GEN_NEW_DATA="true"
-## The following variables only take effect when RUN_MODEL is set to "cloud".
 ### Default path to store the generated benchmark data, separated by space for multiple paths.
-export CLIENT_GEN_PATH="/tmp/dsbenchmark"
-### How many parallel processes to run on each data path to generate data    
-### Default is 2, max is Number of CPU cores / number of $CLIENT_GEN_PATH.  
-export CLIENT_GEN_PARALLEL="2"
+export CUSTOM_GEN_PATH="/tmp/dsbenchmark"
+### How many parallel processes to run on each data path to generate data in all modes
+### Default is 2, max is Number of CPU cores / number of data paths used in each modes.  
+export GEN_DATA_PARALLEL="2"
 
-## Use custom setting as CLIENT_GEN_PATH in local mode on segments
+### The following variables only take effect when RUN_MODEL is set to "local".
+### Use custom setting as CUSTOM_GEN_PATH in local mode on segments
 export USING_CUSTOM_GEN_PATH_IN_LOCAL_MODE="false"
-## The following variables only take effect when RUN_MODEL is set to "local".
-### How many parallel processes to run on each segment to generate data in local mode
-export LOCAL_GEN_PARALLEL="1"
 
 
 ## step 02_init
