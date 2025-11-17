@@ -127,14 +127,17 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
         IFS=' ' read -ra GEN_PATHS <<< "${CUSTOM_GEN_PATH}"
        
         counter=0
-        PORT=${GPFDIST_PORT}
+        flag=10
+
         for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
+          PORT=$((GPFDIST_PORT + flag))
+          let flag=$flag+1
           if [ "${counter}" -eq "0" ]; then
             LOCATION="'"
           else
             LOCATION+="', '"
           fi
-          LOCATION+="gpfdist://${EXT_HOST}:${PORT}/${table_name}_[0-9]*_[0-9]*.dat"
+          LOCATION+="gpfdist://${EXT_HOST}:${PORT}/[0-9]*/${table_name}_[0-9]*_[0-9]*.dat"
           let PORT=$PORT+1
           counter=$((counter + 1))
         done

@@ -216,7 +216,6 @@ export table_name
 
 if [ "${GEN_NEW_DATA}" == "true" ]; then
     if [ "${RUN_MODEL}" != "local" ]; then
-      PARALLEL=${GEN_DATA_PARALLEL}
       
       # Split CUSTOM_GEN_PATH into array of paths
       IFS=' ' read -ra GEN_PATHS <<< "${CUSTOM_GEN_PATH}"
@@ -227,8 +226,10 @@ if [ "${GEN_NEW_DATA}" == "true" ]; then
         exit 1
       fi
       
+      PARALLEL=$((TOTAL_PATHS * GEN_DATA_PARALLEL))
+
       log_time "Number of data generation paths: ${TOTAL_PATHS}"
-      log_time "Parallel processes per path: ${PARALLEL}"
+      log_time "Parallel processes per path: ${GEN_DATA_PARALLEL}"
       log_time "Total parallel processes: $((TOTAL_PATHS * PARALLEL))"
       
       # Prepare each data generation path
@@ -240,46 +241,22 @@ if [ "${GEN_NEW_DATA}" == "true" ]; then
         rm -rf ${GEN_DATA_PATH}/*
         mkdir -p ${GEN_DATA_PATH}/logs
       done
-      
-      # Start data generation processes for each path
-      TOTAL_PARALLEL=$((TOTAL_PATHS * PARALLEL))
-      CHILD=1
+
+      # For each path, start GEN_DATA_PARALLEL processes
+      PARALLEL=$((TOTAL_PATHS * GEN_DATA_PARALLEL))
+      GLOBAL_CHILD=1
       for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
-        # Save the starting CHILD number for current path
-        CURRENT_START_CHILD=${CHILD}
-        PATH_CHILD=1
-        while [ ${PATH_CHILD} -le ${PARALLEL} ]; do
-          log_time "sh ${PWD}/dsdgen -scale ${GEN_DATA_SCALE} -dir ${GEN_DATA_PATH} -parallel ${TOTAL_PARALLEL} -child ${CHILD} -RNGSEED ${RNGSEED} -terminate n > ${GEN_DATA_PATH}/logs/tpcds.generate_data.${CHILD}.log 2>&1 &"
-          cd ${PWD}
-          ${PWD}/dsdgen -scale ${GEN_DATA_SCALE} -dir ${GEN_DATA_PATH} -parallel ${TOTAL_PARALLEL} -child ${CHILD} -RNGSEED ${RNGSEED} -terminate n > ${GEN_DATA_PATH}/logs/tpcds.generate_data.${CHILD}.log 2>&1 &
-          PATH_CHILD=$((PATH_CHILD + 1))
-          CHILD=$((CHILD + 1))
+        for ((j=1; j<=GEN_DATA_PARALLEL; j++)); do
+          GEN_DATA_SUBPATH="${GEN_DATA_PATH}/dsbenchmark/${GLOBAL_CHILD}"
+          log_time "sh generate_data.sh ${GEN_DATA_SCALE} ${GLOBAL_CHILD} ${PARALLEL} ${GEN_DATA_SUBPATH} ${RNGSEED} > ${GEN_DATA_PATH}/dsbenchmark/logs/tpcds.generate.data.${GLOBAL_CHILD}.log 2>&1 &"
+          sh generate_data.sh ${GEN_DATA_SCALE} ${GLOBAL_CHILD} ${PARALLEL} ${GEN_DATA_SUBPATH} ${RNGSEED} > ${GEN_DATA_PATH}/dsbenchmark/logs/tpcds.generate.data.${GLOBAL_CHILD}.log 2>&1 &
+          GLOBAL_CHILD=$((GLOBAL_CHILD + 1))
         done
       done
-        # Wait for data generation processes in current path to complete
+
+      # Wait for data generation processes in current path to complete
       log_time "Waiting for data generation processes to complete..."
       wait
-      
-      for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
-        # make sure there is a file in each directory so that gpfdist doesn't throw an error
-        declare -a tables=("call_center" "catalog_page" "catalog_returns" "catalog_sales" "customer" "customer_address" "customer_demographics" "date_dim" "household_demographics" "income_band" "inventory" "item" "promotion" "reason" "ship_mode" "store" "store_returns" "store_sales" "time_dim" "warehouse" "web_page" "web_returns" "web_sales" "web_site")
-
-        # Create empty files with correct directory path and CHILD numbers
-        for i in "${tables[@]}"; do
-          # Create files for each CHILD number in current path
-          # Check if any file matching the pattern exists
-          filename_pattern="${GEN_DATA_PATH}/${i}_[0-9]*_[0-9]*.dat"
-          log_time "Checking if files exist: ${filename_pattern}"
-          
-          # Simple file check using ls and grep
-          # If no matching files found, create a placeholder file
-          if ! ls ${filename_pattern} 2>/dev/null | grep -q .; then
-            placeholder_file="${GEN_DATA_PATH}/${i}_0_0.dat"
-            log_time "Creating placeholder file: ${placeholder_file}"
-            touch "${placeholder_file}"
-          fi
-        done
-      done
     else
     kill_orphaned_data_gen
     copy_generate_data
