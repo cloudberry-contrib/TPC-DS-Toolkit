@@ -142,24 +142,29 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
        done
        LOCATION+="'"
      elif [ "${RUN_MODEL}" == "local" ] && [ "${USING_CUSTOM_GEN_PATH_IN_LOCAL_MODE}" == "true" ]; then
-       # Handle local mode with custom CLIENT_GEN_PATH
-       EXT_HOST=$(hostname -I | awk '{print $1}')
-       # Split CLIENT_GEN_PATH into array of paths to support multiple directories
-       IFS=' ' read -ra GEN_PATHS <<< "${CLIENT_GEN_PATH}"
-       
-       counter=0
-       PORT=${GPFDIST_PORT}
-       for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
-         if [ "${counter}" -eq "0" ]; then
-           LOCATION="'"
-         else
-           LOCATION+="', '"
-         fi
-         LOCATION+="gpfdist://${EXT_HOST}:${PORT}/${table_name}_[0-9]*_[0-9]*.dat"
-         let PORT=$PORT+1
-         counter=$((counter + 1))
-       done
-       LOCATION+="'"
+       # Handle local mode with custom CLIENT_GEN_PATH, but still use segment nodes for data
+       if [ "${DB_VERSION}" == "gpdb_4_3" ] || [ "${DB_VERSION}" == "gpdb_5" ]; then
+         SQL_QUERY="select rank() over (partition by g.hostname order by p.fselocation), g.hostname from gp_segment_configuration g join pg_filespace_entry p on g.dbid = p.fsedbid join pg_tablespace t on t.spcfsoid where g.content >= 0 and g.role = '${GPFDIST_LOCATION}' and t.spcname = 'pg_default' order by g.hostname"
+       else
+         SQL_QUERY="select rank() over(partition by g.hostname order by g.datadir), g.hostname from gp_segment_configuration g where g.content >= 0 and g.role = '${GPFDIST_LOCATION}' order by g.hostname"
+       fi
+         flag=10
+         for x in $(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -c "${SQL_QUERY}"); do
+           CHILD=$(echo ${x} | awk -F '|' '{print $1}')
+           EXT_HOST=$(echo ${x} | awk -F '|' '{print $2}')
+           PORT=$((GPFDIST_PORT + flag))
+           let flag=$flag+1
+           
+           if [ "${counter}" -eq "0" ]; then
+             LOCATION="'"
+           else
+             LOCATION+="', '"
+           fi
+           # In custom path mode, we still use segment nodes but with potentially different path structure
+           LOCATION+="gpfdist://${EXT_HOST}:${PORT}/${table_name}_[0-9]*_[0-9]*.dat"
+           counter=$((counter + 1))
+         done
+         LOCATION+="'"
       else
         if [ "${DB_VERSION}" == "gpdb_4_3" ] || [ "${DB_VERSION}" == "gpdb_5" ]; then
           SQL_QUERY="select rank() over (partition by g.hostname order by p.fselocation), g.hostname from gp_segment_configuration g join pg_filespace_entry p on g.dbid = p.fsedbid join pg_tablespace t on t.spcfsoid where g.content >= 0 and g.role = '${GPFDIST_LOCATION}' and t.spcname = 'pg_default' order by g.hostname"
