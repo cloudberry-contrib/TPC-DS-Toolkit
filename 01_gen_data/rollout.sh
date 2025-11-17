@@ -248,8 +248,8 @@ if [ "${GEN_NEW_DATA}" == "true" ]; then
       for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
         for ((j=1; j<=GEN_DATA_PARALLEL; j++)); do
           GEN_DATA_SUBPATH="${GEN_DATA_PATH}/dsbenchmark/${GLOBAL_CHILD}"
-          log_time "sh generate_data.sh ${GEN_DATA_SCALE} ${GLOBAL_CHILD} ${PARALLEL} ${GEN_DATA_SUBPATH} ${RNGSEED} > ${GEN_DATA_PATH}/dsbenchmark/logs/tpcds.generate.data.${GLOBAL_CHILD}.log 2>&1 &"
-          sh generate_data.sh ${GEN_DATA_SCALE} ${GLOBAL_CHILD} ${PARALLEL} ${GEN_DATA_SUBPATH} ${RNGSEED} > ${GEN_DATA_PATH}/dsbenchmark/logs/tpcds.generate.data.${GLOBAL_CHILD}.log 2>&1 &
+          log_time "sh ${TPC_DS_DIR}/01_gen_data/generate_data.sh ${GEN_DATA_SCALE} ${GLOBAL_CHILD} ${PARALLEL} ${GEN_DATA_SUBPATH} ${RNGSEED} > ${GEN_DATA_PATH}/dsbenchmark/logs/tpcds.generate.data.${GLOBAL_CHILD}.log 2>&1 &"
+          sh ${TPC_DS_DIR}/01_gen_data/generate_data.sh ${GEN_DATA_SCALE} ${GLOBAL_CHILD} ${PARALLEL} ${GEN_DATA_SUBPATH} ${RNGSEED} > ${GEN_DATA_PATH}/dsbenchmark/logs/tpcds.generate.data.${GLOBAL_CHILD}.log 2>&1 &
           GLOBAL_CHILD=$((GLOBAL_CHILD + 1))
         done
       done
