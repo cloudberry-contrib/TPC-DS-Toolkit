@@ -161,7 +161,7 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
              LOCATION+="', '"
            fi
            # In custom path mode, we still use segment nodes but with potentially different path structure
-           LOCATION+="gpfdist://${EXT_HOST}:${PORT}/${table_name}_[0-9]*_[0-9]*.dat"
+           LOCATION+="gpfdist://${EXT_HOST}:${PORT}/[0-9]*/${table_name}_[0-9]*_[0-9]*.dat"
            counter=$((counter + 1))
          done
          LOCATION+="'"
