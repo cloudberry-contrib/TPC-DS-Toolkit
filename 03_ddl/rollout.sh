@@ -120,14 +120,12 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
       table_name=$(echo ${i} | awk -F '.' '{print $3}')
       export table_name
       counter=0
+      flag=10
      
       if [ "${RUN_MODEL}" == "remote" ]; then
         EXT_HOST=$(hostname -I | awk '{print $1}')
         # Split CUSTOM_GEN_PATH into array of paths to support multiple directories
         IFS=' ' read -ra GEN_PATHS <<< "${CUSTOM_GEN_PATH}"
-       
-        counter=0
-        flag=10
 
         for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
           PORT=$((GPFDIST_PORT + flag))
@@ -150,16 +148,8 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
           log_time "ERROR: CUSTOM_GEN_PATH is empty or not set"
           exit 1
         fi
-        
-        # Get segment hosts
-        if [ "${DB_VERSION}" == "gpdb_4_3" ] || [ "${DB_VERSION}" == "gpdb_5" ]; then
-          SQL_QUERY="select distinct g.hostname from gp_segment_configuration g join pg_filespace_entry p on g.dbid = p.fsedbid join pg_tablespace t on t.spcfsoid = p.fsefsoid where g.content >= 0 and g.role = '${GPFDIST_LOCATION}' and t.spcname = 'pg_default' order by 1"
-        else
-          SQL_QUERY="select distinct g.hostname from gp_segment_configuration g where g.content >= 0 and g.role = '${GPFDIST_LOCATION}' order by 1"
-        fi
 
-        flag=10
-        for EXT_HOST in $(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -c "${SQL_QUERY}"); do
+        for EXT_HOST in $(cat ${TPC_DS_DIR}/segment_hosts.txt); do
           # For each path, start a gpfdist instance
           for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
             PORT=$((GPFDIST_PORT + flag))
@@ -182,7 +172,6 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
           SQL_QUERY="select rank() over(partition by g.hostname order by g.datadir), g.hostname from gp_segment_configuration g where g.content >= 0 and g.role = '${GPFDIST_LOCATION}' order by g.hostname"
         fi
         
-        flag=10
         for x in $(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -c "${SQL_QUERY}"); do
           CHILD=$(echo ${x} | awk -F '|' '{print $1}')
           EXT_HOST=$(echo ${x} | awk -F '|' '{print $2}')

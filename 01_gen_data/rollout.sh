@@ -71,26 +71,26 @@ function gen_data() {
   if [ "${USING_CUSTOM_GEN_PATH_IN_LOCAL_MODE}" != "true" ]; then
     log_time "Using default setting as segment data path in local mode on segments."
 
-    PARALLEL=$(gpstate | grep "Total primary segments" | awk -F '=' '{print $2}')
-    if [ "${PARALLEL}" == "" ]; then
+    TOTAL_PRIMARY=$(gpstate | grep "Total primary segments" | awk -F '=' '{print $2}')
+    if [ "${TOTAL_PRIMARY}" == "" ]; then 
       log_time "ERROR: Unable to determine how many primary segments are in the cluster using gpstate."
       exit 1
     fi
-  
-    #Actual PARALLEL should be $GEN_DATA_PARALLEL*$PARALLEL
-    PARALLEL=$((GEN_DATA_PARALLEL * PARALLEL))
-    
-    log_time "Number of Generate Data Parallel Process is: $PARALLEL"
-  
-    
+
     if [ "${DB_VERSION}" == "gpdb_4_3" ] || [ "${DB_VERSION}" == "gpdb_5" ]; then
       SQL_QUERY="select row_number() over(), g.hostname, p.fselocation as path from gp_segment_configuration g join pg_filespace_entry p on g.dbid = p.fsedbid join pg_tablespace t on t.spcfsoid = p.fsefsoid where g.content >= 0 and g.role = '${GPFDIST_LOCATION}' and t.spcname = 'pg_default' order by 1, 2, 3"  
     else
       SQL_QUERY="select row_number() over(), g.hostname, g.datadir from gp_segment_configuration g where g.content >= 0 and g.role = '${GPFDIST_LOCATION}' order by 1, 2, 3"
     
     fi
-    
+
+    log_time "Number of primary segments: ${TOTAL_PRIMARY}"
+    # Calculate total parallel processes
+    # Each path gets GEN_DATA_PARALLEL processes per host
+    PARALLEL=$((TOTAL_PRIMARY * GEN_DATA_PARALLEL))
+    log_time "Total parallel processes: ${PARALLEL} (primary segments: ${TOTAL_PRIMARY} * parallel_per_path: ${GEN_DATA_PARALLEL})"
     log_time "Clean up previous data generation folder on segments."
+
     for h in $(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -c "${SQL_QUERY}"); do
       EXT_HOST=$(echo ${h} | awk -F '|' '{print $2}')
       SEG_DATA_PATH=$(echo ${h} | awk -F '|' '{print $3}' | sed 's#//#/#g')
@@ -116,17 +116,6 @@ function gen_data() {
   else
     log_time "Using CUSTOM_GEN_PATH in local mode on segments."
     
-    # Get segment hosts from database
-    if [ "${DB_VERSION}" == "gpdb_4_3" ] || [ "${DB_VERSION}" == "gpdb_5" ]; then
-      SQL_QUERY="select distinct g.hostname from gp_segment_configuration g join pg_filespace_entry p on g.dbid = p.fsedbid join pg_tablespace t on t.spcfsoid = p.fsefsoid where g.content >= 0 and g.role = '${GPFDIST_LOCATION}' and t.spcname = 'pg_default' order by 1"
-    else
-      SQL_QUERY="select distinct g.hostname from gp_segment_configuration g where g.content >= 0 and g.role = '${GPFDIST_LOCATION}' order by 1"
-    fi
-    
-    # Generate segment hosts file
-    psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -c "${SQL_QUERY}" > ${TPC_DS_DIR}/segment_hosts.txt
-    
-    # Split CUSTOM_GEN_PATH into array of paths
     IFS=' ' read -ra GEN_PATHS <<< "${CUSTOM_GEN_PATH}"
     TOTAL_PATHS=${#GEN_PATHS[@]}
     
@@ -135,30 +124,20 @@ function gen_data() {
       exit 1
     fi
     
-    # Get number of segment hosts
-    SEGMENT_HOSTS_COUNT=$(wc -l < ${TPC_DS_DIR}/segment_hosts.txt)
-    if [ ${SEGMENT_HOSTS_COUNT} -eq 0 ]; then
-      log_time "ERROR: No segment hosts found"
-      exit 1
-    fi
-    
-    log_time "Number of segment hosts: ${SEGMENT_HOSTS_COUNT}"
+    TOTAL_HOSTS=$(wc -l < ${TPC_DS_DIR}/segment_hosts.txt)
+
+    log_time "Number of segment hosts: ${TOTAL_HOSTS}"
     log_time "Number of data generation paths: ${TOTAL_PATHS}"
-    log_time "CUSTOM_GEN_PATH: ${CUSTOM_GEN_PATH}"
-    
+
     # Calculate total parallel processes
     # Each path gets GEN_DATA_PARALLEL processes per host
-    PARALLEL=$((TOTAL_PATHS * GEN_DATA_PARALLEL * SEGMENT_HOSTS_COUNT))
-    log_time "Total parallel processes: ${PARALLEL} (paths: ${TOTAL_PATHS} * parallel_per_path: ${GEN_DATA_PARALLEL} * hosts: ${SEGMENT_HOSTS_COUNT})"
+    PARALLEL=$((TOTAL_PATHS * GEN_DATA_PARALLEL * TOTAL_HOSTS))
+    log_time "Total parallel processes: ${PARALLEL} (paths: ${TOTAL_PATHS} * parallel_per_path: ${GEN_DATA_PARALLEL} * hosts: ${TOTAL_HOSTS})"
     
     # Clean up and prepare directories on each segment host
     log_time "Clean up and prepare data generation folders on segments."
-    HOST_INDEX=0
-    while read -r HOST; do
-      if [ -z "${HOST}" ]; then
-        continue
-      fi
-      
+
+    for EXT_HOST in $(cat ${TPC_DS_DIR}/segment_hosts.txt); do
       # Clean up existing directories and create new ones
       for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
         log_time "ssh -n ${HOST} \"rm -rf ${GEN_DATA_PATH}/dsbenchmark\""
@@ -166,34 +145,22 @@ function gen_data() {
         log_time "ssh -n ${HOST} \"mkdir -p ${GEN_DATA_PATH}/dsbenchmark/logs\""
         ssh -n ${HOST} "mkdir -p ${GEN_DATA_PATH}/dsbenchmark/logs"
       done
-      
-      HOST_INDEX=$((HOST_INDEX + 1))
-    done < ${TPC_DS_DIR}/segment_hosts.txt
+    done
     
     # Start data generation on each segment host
     log_time "Starting data generation on segment hosts."
-    GLOBAL_CHILD=1
-    HOST_INDEX=0
-    while read -r HOST; do
-      if [ -z "${HOST}" ]; then
-        continue
-      fi
-      
-      log_time "Starting data generation on host: ${HOST}"
-      
+    CHILD=1
+    for EXT_HOST in $(cat ${TPC_DS_DIR}/segment_hosts.txt); do
       # For each path, start GEN_DATA_PARALLEL processes
       for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
         for ((j=1; j<=GEN_DATA_PARALLEL; j++)); do
-          GEN_DATA_SUBPATH="${GEN_DATA_PATH}/dsbenchmark/${GLOBAL_CHILD}"
-          log_time "ssh -n ${HOST} \"bash -c 'cd ~/; ./generate_data.sh ${GEN_DATA_SCALE} ${GLOBAL_CHILD} ${PARALLEL} ${GEN_DATA_SUBPATH} ${RNGSEED} > ${GEN_DATA_PATH}/dsbenchmark/logs/tpcds.generate.data.${GLOBAL_CHILD}.log 2>&1 &'\""
-          ssh -n ${HOST} "bash -c 'cd ~/; ./generate_data.sh ${GEN_DATA_SCALE} ${GLOBAL_CHILD} ${PARALLEL} ${GEN_DATA_SUBPATH} ${RNGSEED} > ${GEN_DATA_PATH}/dsbenchmark/logs/tpcds.generate.data.${GLOBAL_CHILD}.log 2>&1 &'" &
-          GLOBAL_CHILD=$((GLOBAL_CHILD + 1))
+          GEN_DATA_SUBPATH="${GEN_DATA_PATH}/dsbenchmark/${CHILD}"
+          log_time "ssh -n ${EXT_HOST} \"bash -c 'cd ~/; ./generate_data.sh ${GEN_DATA_SCALE} ${CHILD} ${PARALLEL} ${GEN_DATA_SUBPATH} ${RNGSEED} > ${GEN_DATA_PATH}/dsbenchmark/logs/tpcds.generate.data.${CHILD}.log 2>&1 &'\""
+          ssh -n ${EXT_HOST} "bash -c 'cd ~/; ./generate_data.sh ${GEN_DATA_SCALE} ${CHILD} ${PARALLEL} ${GEN_DATA_SUBPATH} ${RNGSEED} > ${GEN_DATA_PATH}/dsbenchmark/logs/tpcds.generate.data.${CHILD}.log 2>&1 &'" &
+          CHILD=$((CHILD + 1))
         done
       done
-      
-      HOST_INDEX=$((HOST_INDEX + 1))
-    done < ${TPC_DS_DIR}/segment_hosts.txt
-    
+    done
     wait
   fi
   log_time "Data generation completed on all segment hosts."
@@ -212,53 +179,57 @@ table_name="gen_data"
 export table_name
 
 if [ "${GEN_NEW_DATA}" == "true" ]; then
-    if [ "${RUN_MODEL}" != "local" ]; then
-      
-      # Split CUSTOM_GEN_PATH into array of paths
-      IFS=' ' read -ra GEN_PATHS <<< "${CUSTOM_GEN_PATH}"
-      TOTAL_PATHS=${#GEN_PATHS[@]}
-      
-      if [ ${TOTAL_PATHS} -eq 0 ]; then
-        log_time "ERROR: CUSTOM_GEN_PATH is empty or not set"
-        exit 1
+  if [ "${RUN_MODEL}" != "local" ]; then      
+    # Split CUSTOM_GEN_PATH into array of paths
+    IFS=' ' read -ra GEN_PATHS <<< "${CUSTOM_GEN_PATH}"
+    TOTAL_PATHS=${#GEN_PATHS[@]}
+    
+    if [ ${TOTAL_PATHS} -eq 0 ]; then
+      log_time "ERROR: CUSTOM_GEN_PATH is empty or not set"
+      exit 1
+    fi
+    
+    PARALLEL=$((TOTAL_PATHS * GEN_DATA_PARALLEL))
+    log_time "Number of data generation paths: ${TOTAL_PATHS}"
+    log_time "Parallel processes per path: ${GEN_DATA_PARALLEL}"
+    log_time "Total parallel processes: ${PARALLEL}"
+    # Prepare each data generation path
+    for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
+      if [[ ! -d "${GEN_DATA_PATH}" && ! -L "${GEN_DATA_PATH}" ]]; then
+        log_time "mkdir ${GEN_DATA_PATH}/dsbenchmark"
+        mkdir -p ${GEN_DATA_PATH}/dsbenchmark
       fi
+      rm -rf ${GEN_DATA_PATH}/dsbenchmark/*
+      mkdir -p ${GEN_DATA_PATH}/dsbenchmark/logs
+    done
       
-      PARALLEL=$((TOTAL_PATHS * GEN_DATA_PARALLEL))
-
-      log_time "Number of data generation paths: ${TOTAL_PATHS}"
-      log_time "Parallel processes per path: ${GEN_DATA_PARALLEL}"
-      log_time "Total parallel processes: ${PARALLEL}"
-      
-      # Prepare each data generation path
-      for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
-        if [[ ! -d "${GEN_DATA_PATH}" && ! -L "${GEN_DATA_PATH}" ]]; then
-          log_time "mkdir ${GEN_DATA_PATH}/dsbenchmark"
-          mkdir -p ${GEN_DATA_PATH}/dsbenchmark
-        fi
-        rm -rf ${GEN_DATA_PATH}/dsbenchmark/*
-        mkdir -p ${GEN_DATA_PATH}/dsbenchmark/logs
+    CHILD=1
+    for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
+      for ((j=1; j<=GEN_DATA_PARALLEL; j++)); do
+        GEN_DATA_SUBPATH="${GEN_DATA_PATH}/dsbenchmark/${CHILD}"
+        log_time "sh ${TPC_DS_DIR}/01_gen_data/generate_data.sh ${GEN_DATA_SCALE} ${CHILD} ${PARALLEL} ${GEN_DATA_SUBPATH} ${RNGSEED} > ${GEN_DATA_PATH}/dsbenchmark/logs/tpcds.generate.data.${CHILD}.log 2>&1 &"
+        sh ${TPC_DS_DIR}/01_gen_data/generate_data.sh ${GEN_DATA_SCALE} ${CHILD} ${PARALLEL} ${GEN_DATA_SUBPATH} ${RNGSEED} > ${GEN_DATA_PATH}/dsbenchmark/logs/tpcds.generate.data.${CHILD}.log 2>&1 &
+        CHILD=$((CHILD + 1))
       done
-      
-      GLOBAL_CHILD=1
-      for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
-        for ((j=1; j<=GEN_DATA_PARALLEL; j++)); do
-          GEN_DATA_SUBPATH="${GEN_DATA_PATH}/dsbenchmark/${GLOBAL_CHILD}"
-          log_time "sh ${TPC_DS_DIR}/01_gen_data/generate_data.sh ${GEN_DATA_SCALE} ${GLOBAL_CHILD} ${PARALLEL} ${GEN_DATA_SUBPATH} ${RNGSEED} > ${GEN_DATA_PATH}/dsbenchmark/logs/tpcds.generate.data.${GLOBAL_CHILD}.log 2>&1 &"
-          sh ${TPC_DS_DIR}/01_gen_data/generate_data.sh ${GEN_DATA_SCALE} ${GLOBAL_CHILD} ${PARALLEL} ${GEN_DATA_SUBPATH} ${RNGSEED} > ${GEN_DATA_PATH}/dsbenchmark/logs/tpcds.generate.data.${GLOBAL_CHILD}.log 2>&1 &
-          GLOBAL_CHILD=$((GLOBAL_CHILD + 1))
-        done
-      done
-
-      # Wait for data generation processes in current path to complete
-      log_time "Waiting for data generation processes to complete..."
-      wait
-    else
+    done
+    log_time "Now generating data...This may take a while."
+    count=$(ps -ef |grep -v grep |grep "generate_data.sh"|wc -l || true)
+    seconds=0
+    echo -ne "Generating data duration: "
+    while [ "$count" -gt "0" ]; do
+      printf "\rGenerating data duration: ${seconds} second(s)"
+      sleep 5
+      seconds=$((seconds + 5))
+      count=$(ps -ef |grep -v grep |grep "generate_data.sh"|wc -l || true)
+    done
+  else
     kill_orphaned_data_gen
     copy_generate_data
     gen_data
+    echo "Current database running this test is ${VERSION}"
     echo ""
+    log_time "Now generating data...This may take a while."
     count=$(get_count_generate_data)
-    log_time "Now generating data.  This may take a while."
     seconds=0
     echo -ne "Generating data duration: "
     while [ "$count" -gt "0" ]; do
