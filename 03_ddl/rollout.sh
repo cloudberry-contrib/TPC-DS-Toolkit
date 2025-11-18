@@ -131,15 +131,14 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
 
         for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
           PORT=$((GPFDIST_PORT + flag))
-          let flag=$flag+1
           if [ "${counter}" -eq "0" ]; then
             LOCATION="'"
           else
             LOCATION+="', '"
           fi
           LOCATION+="gpfdist://${EXT_HOST}:${PORT}/[0-9]*/${table_name}_[0-9]*_[0-9]*.dat"
-          let PORT=$PORT+1
           counter=$((counter + 1))
+          let flag=$flag+1
         done
         LOCATION+="'"
       elif [ "${RUN_MODEL}" == "local" ] && [ "${USING_CUSTOM_GEN_PATH_IN_LOCAL_MODE}" == "true" ]; then
