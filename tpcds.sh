@@ -89,6 +89,8 @@ if [ "${RUN_MODEL}" != "local" ]; then
   CUSTOM_GEN_PATH=$(IFS=' '; echo "${GEN_PATHS[*]}")
   export CUSTOM_GEN_PATH
   log_time "CUSTOM_GEN_PATH set to: ${CUSTOM_GEN_PATH}"
+else
+  create_hosts_file
 fi
 
 # Get a random port for gpfdist

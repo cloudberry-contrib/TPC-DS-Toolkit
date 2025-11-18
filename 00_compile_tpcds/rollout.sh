@@ -117,7 +117,7 @@ if [ "${compile_flag}" == "true" ]; then
 else
   echo "Binary works, no compiling needed."
 fi
-create_hosts_file
+
 copy_tpc
 copy_queries
 print_log
