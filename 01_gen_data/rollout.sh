@@ -198,8 +198,8 @@ function gen_data() {
     done < ${TPC_DS_DIR}/segment_hosts.txt
     
     wait
-    log_time "Data generation completed on all segment hosts."
   fi
+  log_time "Data generation completed on all segment hosts."
 }
 
 step="gen_data"
