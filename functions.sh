@@ -241,7 +241,7 @@ function create_hosts_file() {
   # get_version
 
   if [ "$RUN_MODEL" == "local" ]; then
-    SQL_QUERY="SELECT DISTINCT hostname FROM gp_segment_configuration WHERE role = '${GPFDIST_LOCATION}' AND content >= 0"
+    SQL_QUERY="SELECT DISTINCT hostname FROM gp_segment_configuration WHERE role = '${GPFDIST_LOCATION}' AND content >= 0 ORDER BY 1"
     psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -t -A -c "${SQL_QUERY}" -o ${TPC_DS_DIR}/segment_hosts.txt
   fi
 }
