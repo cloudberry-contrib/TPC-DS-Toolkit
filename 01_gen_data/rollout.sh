@@ -54,7 +54,6 @@ function kill_orphaned_data_gen() {
   # always return true even if no processes were killed
   for i in $(cat ${TPC_DS_DIR}/segment_hosts.txt); do
     ssh ${i} "pkill dsdgen" || true &
-    ssh ${i} "rm -rf /tmp/tpcds.generate_data.*.log" || true &
   done
   wait
 }
