@@ -151,9 +151,6 @@ function gen_data() {
     PARALLEL=$((TOTAL_PATHS * GEN_DATA_PARALLEL * SEGMENT_HOSTS_COUNT))
     log_time "Total parallel processes: ${PARALLEL} (paths: ${TOTAL_PATHS} * parallel_per_path: ${GEN_DATA_PARALLEL} * hosts: ${SEGMENT_HOSTS_COUNT})"
     
-    # Copy generate_data.sh to all segment hosts
-    copy_generate_data
-    
     # Clean up and prepare directories on each segment host
     log_time "Clean up and prepare data generation folders on segments."
     HOST_INDEX=0
@@ -241,9 +238,7 @@ if [ "${GEN_NEW_DATA}" == "true" ]; then
         rm -rf ${GEN_DATA_PATH}/dsbenchmark/*
         mkdir -p ${GEN_DATA_PATH}/dsbenchmark/logs
       done
-
-      # For each path, start GEN_DATA_PARALLEL processes
-      PARALLEL=$((TOTAL_PATHS * GEN_DATA_PARALLEL))
+      
       GLOBAL_CHILD=1
       for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
         for ((j=1; j<=GEN_DATA_PARALLEL; j++)); do
