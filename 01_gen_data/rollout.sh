@@ -140,10 +140,10 @@ function gen_data() {
     for EXT_HOST in $(cat ${TPC_DS_DIR}/segment_hosts.txt); do
       # Clean up existing directories and create new ones
       for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
-        log_time "ssh -n ${HOST} \"rm -rf ${GEN_DATA_PATH}/dsbenchmark\""
-        ssh -n ${HOST} "rm -rf ${GEN_DATA_PATH}/dsbenchmark"
-        log_time "ssh -n ${HOST} \"mkdir -p ${GEN_DATA_PATH}/dsbenchmark/logs\""
-        ssh -n ${HOST} "mkdir -p ${GEN_DATA_PATH}/dsbenchmark/logs"
+        log_time "ssh -n ${EXT_HOST} \"rm -rf ${GEN_DATA_PATH}/dsbenchmark\""
+        ssh -n ${EXT_HOST} "rm -rf ${GEN_DATA_PATH}/dsbenchmark"
+        log_time "ssh -n ${EXT_HOST} \"mkdir -p ${GEN_DATA_PATH}/dsbenchmark/logs\""
+        ssh -n ${EXT_HOST} "mkdir -p ${GEN_DATA_PATH}/dsbenchmark/logs"
       done
     done
     
