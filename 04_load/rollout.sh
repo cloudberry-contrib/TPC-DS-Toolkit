@@ -203,6 +203,8 @@ for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "
         table_name=$(echo "${i}" | awk -F '.' '{print $3}')
         export table_name
 
+        log_time "Loading table ${DB_SCHEMA_NAME}.${table_name}"
+
         if [ "${TRUNCATE_TABLES}" == "true" ]; then
             log_time "Truncate table ${DB_SCHEMA_NAME}.${table_name}"
             psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -c "TRUNCATE TABLE ${DB_SCHEMA_NAME}.${table_name}"

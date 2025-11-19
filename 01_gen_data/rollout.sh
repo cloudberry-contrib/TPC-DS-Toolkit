@@ -109,7 +109,9 @@ function gen_data() {
     for h in $(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -c "${SQL_QUERY}"); do
       EXT_HOST=$(echo ${h} | awk -F '|' '{print $2}')
       SEG_DATA_PATH=$(echo ${h} | awk -F '|' '{print $3}' | sed 's#//#/#g')
-      log_time "ssh -n ${EXT_HOST} \"rm -rf ${SEG_DATA_PATH}/dsbenchmark; mkdir -p ${SEG_DATA_PATH}/dsbenchmark/logs\" &"
+      if [ "${LOG_DEBUG}" == "true" ]; then
+        log_time "ssh -n ${EXT_HOST} \"rm -rf ${SEG_DATA_PATH}/dsbenchmark; mkdir -p ${SEG_DATA_PATH}/dsbenchmark/logs\" &"
+      fi
       ssh -n ${EXT_HOST} "rm -rf ${SEG_DATA_PATH}/dsbenchmark; mkdir -p ${SEG_DATA_PATH}/dsbenchmark/logs" &
     done
     wait 
@@ -121,7 +123,9 @@ function gen_data() {
   
       for ((j=1; j<=GEN_DATA_PARALLEL; j++)); do
         GEN_DATA_PATH="${SEG_DATA_PATH}/dsbenchmark/${CHILD}"
-        log_time "ssh -n ${EXT_HOST} \"bash -c 'cd ~/; ./generate_data.sh ${GEN_DATA_SCALE} ${CHILD} ${PARALLEL} ${GEN_DATA_PATH} ${RNGSEED} > ${SEG_DATA_PATH}/dsbenchmark/logs/tpcds.generate_data.${CHILD}.log 2>&1 &'\""
+        if [ "${LOG_DEBUG}" == "true" ]; then
+          log_time "ssh -n ${EXT_HOST} \"bash -c 'cd ~/; ./generate_data.sh ${GEN_DATA_SCALE} ${CHILD} ${PARALLEL} ${GEN_DATA_PATH} ${RNGSEED} > ${SEG_DATA_PATH}/dsbenchmark/logs/tpcds.generate_data.${CHILD}.log 2>&1 &'\""
+        fi
         ssh -n ${EXT_HOST} "bash -c 'cd ~/; ./generate_data.sh ${GEN_DATA_SCALE} ${CHILD} ${PARALLEL} ${GEN_DATA_PATH} ${RNGSEED} > ${SEG_DATA_PATH}/dsbenchmark/logs/tpcds.generate_data.${CHILD}.log 2>&1 &'" &
         CHILD=$((CHILD + 1))
       done
@@ -152,7 +156,9 @@ function gen_data() {
     for EXT_HOST in $(cat ${TPC_DS_DIR}/segment_hosts.txt); do
       # Clean up existing directories and create new ones
       for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
-        log_time "ssh -n ${EXT_HOST} \"rm -rf ${GEN_DATA_PATH}/dsbenchmark; mkdir -p ${GEN_DATA_PATH}/dsbenchmark/logs\" &"
+        if [ "${LOG_DEBUG}" == "true" ]; then
+          log_time "ssh -n ${EXT_HOST} \"rm -rf ${GEN_DATA_PATH}/dsbenchmark; mkdir -p ${GEN_DATA_PATH}/dsbenchmark/logs\" &"
+        fi
         ssh -n ${EXT_HOST} "rm -rf ${GEN_DATA_PATH}/dsbenchmark; mkdir -p ${GEN_DATA_PATH}/dsbenchmark/logs" &
       done
     done
@@ -166,7 +172,9 @@ function gen_data() {
       for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
         for ((j=1; j<=GEN_DATA_PARALLEL; j++)); do
           GEN_DATA_SUBPATH="${GEN_DATA_PATH}/dsbenchmark/${CHILD}"
-          log_time "ssh -n ${EXT_HOST} \"bash -c 'cd ~/; ./generate_data.sh ${GEN_DATA_SCALE} ${CHILD} ${PARALLEL} ${GEN_DATA_SUBPATH} ${RNGSEED} > ${GEN_DATA_PATH}/dsbenchmark/logs/tpcds.generate.data.${CHILD}.log 2>&1 &'\""
+          if [ "${LOG_DEBUG}" == "true" ]; then
+            log_time "ssh -n ${EXT_HOST} \"bash -c 'cd ~/; ./generate_data.sh ${GEN_DATA_SCALE} ${CHILD} ${PARALLEL} ${GEN_DATA_SUBPATH} ${RNGSEED} > ${GEN_DATA_PATH}/dsbenchmark/logs/tpcds.generate.data.${CHILD}.log 2>&1 &'\""
+          fi
           ssh -n ${EXT_HOST} "bash -c 'cd ~/; ./generate_data.sh ${GEN_DATA_SCALE} ${CHILD} ${PARALLEL} ${GEN_DATA_SUBPATH} ${RNGSEED} > ${GEN_DATA_PATH}/dsbenchmark/logs/tpcds.generate.data.${CHILD}.log 2>&1 &'" &
           CHILD=$((CHILD + 1))
         done
@@ -206,7 +214,9 @@ if [ "${GEN_NEW_DATA}" == "true" ]; then
     # Prepare each data generation path
     for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
       if [[ ! -d "${GEN_DATA_PATH}" && ! -L "${GEN_DATA_PATH}" ]]; then
-        log_time "mkdir ${GEN_DATA_PATH}/dsbenchmark"
+        if [ "${LOG_DEBUG}" == "true" ]; then
+          log_time "mkdir ${GEN_DATA_PATH}/dsbenchmark"
+        fi
         mkdir -p ${GEN_DATA_PATH}/dsbenchmark
       fi
       rm -rf ${GEN_DATA_PATH}/dsbenchmark/*
@@ -217,7 +227,9 @@ if [ "${GEN_NEW_DATA}" == "true" ]; then
     for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
       for ((j=1; j<=GEN_DATA_PARALLEL; j++)); do
         GEN_DATA_SUBPATH="${GEN_DATA_PATH}/dsbenchmark/${CHILD}"
-        log_time "sh ${TPC_DS_DIR}/01_gen_data/generate_data.sh ${GEN_DATA_SCALE} ${CHILD} ${PARALLEL} ${GEN_DATA_SUBPATH} ${RNGSEED} > ${GEN_DATA_PATH}/dsbenchmark/logs/tpcds.generate.data.${CHILD}.log 2>&1 &"
+        if [ "${LOG_DEBUG}" == "true" ]; then
+          log_time "sh ${TPC_DS_DIR}/01_gen_data/generate_data.sh ${GEN_DATA_SCALE} ${CHILD} ${PARALLEL} ${GEN_DATA_SUBPATH} ${RNGSEED} > ${GEN_DATA_PATH}/dsbenchmark/logs/tpcds.generate.data.${CHILD}.log 2>&1 &"
+        fi
         sh ${TPC_DS_DIR}/01_gen_data/generate_data.sh ${GEN_DATA_SCALE} ${CHILD} ${PARALLEL} ${GEN_DATA_SUBPATH} ${RNGSEED} > ${GEN_DATA_PATH}/dsbenchmark/logs/tpcds.generate.data.${CHILD}.log 2>&1 &
         CHILD=$((CHILD + 1))
       done
