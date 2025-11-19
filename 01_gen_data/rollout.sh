@@ -104,16 +104,15 @@ function gen_data() {
     # Each path gets GEN_DATA_PARALLEL processes per host
     PARALLEL=$((TOTAL_PRIMARY * GEN_DATA_PARALLEL))
     log_time "Total parallel processes: ${PARALLEL} (primary segments: ${TOTAL_PRIMARY} * parallel_per_path: ${GEN_DATA_PARALLEL})"
+    
     log_time "Clean up previous data generation folder on segments."
-
     for h in $(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -c "${SQL_QUERY}"); do
       EXT_HOST=$(echo ${h} | awk -F '|' '{print $2}')
       SEG_DATA_PATH=$(echo ${h} | awk -F '|' '{print $3}' | sed 's#//#/#g')
-      log_time "ssh -n ${EXT_HOST} \"rm -rf ${SEG_DATA_PATH}/dsbenchmark\""
-      ssh -n ${EXT_HOST} "rm -rf ${SEG_DATA_PATH}/dsbenchmark"
-      log_time "ssh -n ${EXT_HOST} \"mkdir -p ${SEG_DATA_PATH}/dsbenchmark/logs\""
-      ssh -n ${EXT_HOST} "mkdir -p ${SEG_DATA_PATH}/dsbenchmark/logs"
+      log_time "ssh -n ${EXT_HOST} \"rm -rf ${SEG_DATA_PATH}/dsbenchmark; mkdir -p ${SEG_DATA_PATH}/dsbenchmark/logs\" &"
+      ssh -n ${EXT_HOST} "rm -rf ${SEG_DATA_PATH}/dsbenchmark; mkdir -p ${SEG_DATA_PATH}/dsbenchmark/logs" &
     done
+    wait 
     
     CHILD=1
     for i in $(psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -c "${SQL_QUERY}"); do
@@ -150,16 +149,14 @@ function gen_data() {
     
     # Clean up and prepare directories on each segment host
     log_time "Clean up and prepare data generation folders on segments."
-
     for EXT_HOST in $(cat ${TPC_DS_DIR}/segment_hosts.txt); do
       # Clean up existing directories and create new ones
       for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
-        log_time "ssh -n ${EXT_HOST} \"rm -rf ${GEN_DATA_PATH}/dsbenchmark\""
-        ssh -n ${EXT_HOST} "rm -rf ${GEN_DATA_PATH}/dsbenchmark"
-        log_time "ssh -n ${EXT_HOST} \"mkdir -p ${GEN_DATA_PATH}/dsbenchmark/logs\""
-        ssh -n ${EXT_HOST} "mkdir -p ${GEN_DATA_PATH}/dsbenchmark/logs"
+        log_time "ssh -n ${EXT_HOST} \"rm -rf ${GEN_DATA_PATH}/dsbenchmark; mkdir -p ${GEN_DATA_PATH}/dsbenchmark/logs\" &"
+        ssh -n ${EXT_HOST} "rm -rf ${GEN_DATA_PATH}/dsbenchmark; mkdir -p ${GEN_DATA_PATH}/dsbenchmark/logs" &
       done
     done
+    wait
     
     # Start data generation on each segment host
     log_time "Starting data generation on segment hosts."
