@@ -33,7 +33,9 @@ fi
 # Clean up previous query file
 rm -f ${PWD}/query_0.sql
 
-log_time "${PWD}/dsqgen -input ${PWD}/query_templates/templates.lst -directory ${PWD}/query_templates -dialect cloudberry -scale ${GEN_DATA_SCALE} -RNGSEED ${RNGSEED} -verbose y -output ${PWD}"
+if [ "${LOG_DEBUG}" == "true" ]; then
+  log_time "${PWD}/dsqgen -input ${PWD}/query_templates/templates.lst -directory ${PWD}/query_templates -dialect cloudberry -scale ${GEN_DATA_SCALE} -RNGSEED ${RNGSEED} -verbose y -output ${PWD}"
+fi
 ${PWD}/dsqgen -input ${PWD}/query_templates/templates.lst -directory ${PWD}/query_templates -dialect cloudberry -scale ${GEN_DATA_SCALE} -RNGSEED ${RNGSEED} -verbose y -output ${PWD}
 
 # Clean up previous SQL files
@@ -57,7 +59,9 @@ for p in $(seq 1 99); do
   done
 
   # Create and populate query file
-  log_time "Creating: ${TPC_DS_DIR}/06_sql/${filename}"
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    log_time "Creating: ${TPC_DS_DIR}/06_sql/${filename}"
+  fi
   printf "set role ${BENCH_ROLE};\nset search_path=${DB_SCHEMA_NAME},public;\n" > ${TPC_DS_DIR}/06_sql/${filename}
 
   # Set optimizer settings
@@ -87,7 +91,9 @@ for p in $(seq 1 99); do
   
   query_id=$((query_id + 1))
   file_id=$((file_id + 1))
-  log_time "Completed: ${TPC_DS_DIR}/06_sql/${filename}"
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    log_time "Completed: ${TPC_DS_DIR}/06_sql/${filename}"
+  fi
 done
 
 # Handle special queries that contain multiple statements
@@ -100,7 +106,10 @@ arr=("114.${BENCH_ROLE}.14.sql" "123.${BENCH_ROLE}.23.sql" "124.${BENCH_ROLE}.24
 
 for z in "${arr[@]}"; do
   myfilename=${TPC_DS_DIR}/06_sql/${z}
-  log_time "Modifying: ${myfilename}"
+  
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    log_time "Modifying: ${myfilename}"
+  fi
   
   # Find position for inserting EXPLAIN_ANALYZE
   if [ "${ENABLE_VECTORIZATION}" = "on" ]; then
@@ -112,7 +121,9 @@ for z in "${arr[@]}"; do
   # Insert EXPLAIN_ANALYZE after first query
   pos=$((pos + 1))
   sed -i ''${pos}'i\'$'\n'':EXPLAIN_ANALYZE'$'\n' ${myfilename}
-  log_time "Modified: ${myfilename}"
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    log_time "Modified: ${myfilename}"
+  fi
 done
 
 log_time "COMPLETE: Generated queries for scale ${GEN_DATA_SCALE} with RNGSEED ${RNGSEED}"

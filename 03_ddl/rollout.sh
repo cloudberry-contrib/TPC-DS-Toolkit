@@ -194,7 +194,7 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
       if [ "${LOG_DEBUG}" == "true" ]; then
         log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -a -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\" -v LOCATION=\"${LOCATION}\" -v DB_EXT_SCHEMA_NAME=\"${DB_EXT_SCHEMA_NAME}\""
       fi
-      psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" -v LOCATION="${LOCATION}" -v DB_EXT_SCHEMA_NAME="${DB_EXT_SCHEMA_NAME}"
+      psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -q -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" -v LOCATION="${LOCATION}" -v DB_EXT_SCHEMA_NAME="${DB_EXT_SCHEMA_NAME}"
       print_log
     done
   fi
