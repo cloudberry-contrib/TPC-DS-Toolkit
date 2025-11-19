@@ -15,7 +15,9 @@ filter="gpdb"
 function copy_script() {
   log_time "copy the start and stop scripts to the segment hosts in the cluster"
   for i in $(cat ${TPC_DS_DIR}/segment_hosts.txt); do
-    log_time "scp start_gpfdist.sh stop_gpfdist.sh ${i}:"
+    if [ "${LOG_DEBUG}" == "true" ]; then
+      log_time "scp start_gpfdist.sh stop_gpfdist.sh ${i}:"
+    fi
     scp ${PWD}/start_gpfdist.sh ${PWD}/stop_gpfdist.sh ${i}: &
   done
   wait
@@ -49,7 +51,9 @@ function start_gpfdist() {
         GEN_DATA_PATH="${GEN_DATA_PATH}/dsbenchmark"
         PORT=$((GPFDIST_PORT + flag))
         let flag=$flag+1
-        log_time "ssh -n ${EXT_HOST} \"bash -c 'cd ~${ADMIN_USER}; ./start_gpfdist.sh $PORT ${GEN_DATA_PATH} ${env_file}'\""
+        if [ "${LOG_DEBUG}" == "true" ]; then
+          log_time "ssh -n ${EXT_HOST} \"bash -c 'cd ~${ADMIN_USER}; ./start_gpfdist.sh $PORT ${GEN_DATA_PATH} ${env_file}'\""
+        fi
         ssh -n ${EXT_HOST} "bash -c 'cd ~${ADMIN_USER}; ./start_gpfdist.sh $PORT ${GEN_DATA_PATH} ${env_file}'" &
       done
     done
@@ -69,7 +73,9 @@ function start_gpfdist() {
       GEN_DATA_PATH="${GEN_DATA_PATH}/dsbenchmark"
       PORT=$((GPFDIST_PORT + flag))
       let flag=$flag+1
-      log_time "ssh -n ${EXT_HOST} \"bash -c 'cd ~${ADMIN_USER}; ./start_gpfdist.sh $PORT ${GEN_DATA_PATH} ${env_file}'\""
+      if [ "${LOG_DEBUG}" == "true" ]; then
+        log_time "ssh -n ${EXT_HOST} \"bash -c 'cd ~${ADMIN_USER}; ./start_gpfdist.sh $PORT ${GEN_DATA_PATH} ${env_file}'\""
+      fi
       ssh -n ${EXT_HOST} "bash -c 'cd ~${ADMIN_USER}; ./start_gpfdist.sh $PORT ${GEN_DATA_PATH} ${env_file}'" &
     done
   fi
@@ -128,7 +134,9 @@ if [ "${RUN_MODEL}" == "remote" ]; then
   for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
     GEN_DATA_PATH="${GEN_DATA_PATH}/dsbenchmark"
     PORT=$((GPFDIST_PORT + flag))
-    log_time "Starting gpfdist on port ${PORT} for path: ${GEN_DATA_PATH}"
+    if [ "${LOG_DEBUG}" == "true" ]; then
+      log_time "Starting gpfdist on port ${PORT} for path: ${GEN_DATA_PATH}"
+    fi
     sh ${PWD}/start_gpfdist.sh $PORT "${GEN_DATA_PATH}" ${env_file}
     let flag=$flag+1
   done
@@ -206,7 +214,9 @@ for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "
         log_time "Loading table ${DB_SCHEMA_NAME}.${table_name}"
 
         if [ "${TRUNCATE_TABLES}" == "true" ]; then
-            log_time "Truncate table ${DB_SCHEMA_NAME}.${table_name}"
+            if [ "${LOG_DEBUG}" == "true" ]; then
+              log_time "Truncate table ${DB_SCHEMA_NAME}.${table_name}"
+            fi
             psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -c "TRUNCATE TABLE ${DB_SCHEMA_NAME}.${table_name}"
         fi
 
@@ -225,7 +235,9 @@ for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "
                 log_time "Loading data from path: ${GEN_DATA_PATH}"
                 for file in ${GEN_DATA_PATH}/dsbenchmark/[0-9]*/${table_name}_[0-9]*_[0-9]*.dat; do
                   if [ -e "$file" ]; then
-                    log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -c \"\COPY ${DB_SCHEMA_NAME}.${table_name} FROM '$file' WITH (FORMAT csv, DELIMITER '|', NULL '', ESCAPE E'\\\\\\\\', ENCODING 'LATIN1')\" | grep COPY | awk -F ' ' '{print \$2}'"
+                    if [ "${LOG_DEBUG}" == "true" ]; then
+                      log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -c \"\COPY ${DB_SCHEMA_NAME}.${table_name} FROM '$file' WITH (FORMAT csv, DELIMITER '|', NULL '', ESCAPE E'\\\\\\\\', ENCODING 'LATIN1')\" | grep COPY | awk -F ' ' '{print \$2}'"
+                    fi
                     result=$(
                       psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -c "\COPY ${DB_SCHEMA_NAME}.${table_name} FROM '$file' WITH (FORMAT csv, DELIMITER '|', NULL '', ESCAPE E'\\\\', ENCODING 'LATIN1')" | grep COPY | awk -F ' ' '{print $2}'
                       exit ${PIPESTATUS[0]}
