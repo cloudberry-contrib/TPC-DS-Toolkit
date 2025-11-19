@@ -127,7 +127,6 @@ function gen_data() {
         CHILD=$((CHILD + 1))
       done
     done
-    wait
   else
     log_time "Using CUSTOM_GEN_PATH in local mode on segments."
     
@@ -176,7 +175,6 @@ function gen_data() {
         done
       done
     done
-    wait
   fi
   log_time "Data generation completed on all segment hosts."
 }
