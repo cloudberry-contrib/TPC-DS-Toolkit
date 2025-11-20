@@ -224,11 +224,15 @@ for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "
         log_time "Loading table ${DB_SCHEMA_NAME}.${table_name}"
 
         if [ "${TRUNCATE_TABLES}" == "true" ]; then
-            log_time "Truncate table ${DB_SCHEMA_NAME}.${table_name}"
+            if [ "${LOG_DEBUG}" == "true" ]; then
+              log_time "Truncate table ${DB_SCHEMA_NAME}.${table_name}"
+            fi
             psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -c "TRUNCATE TABLE ${DB_SCHEMA_NAME}.${table_name}"
         fi
 
-        log_time "Loading table ${DB_SCHEMA_NAME}.${table_name}"
+        if [ "${LOG_DEBUG}" == "true" ]; then
+          log_time "Loading table ${DB_SCHEMA_NAME}.${table_name}"
+        fi
 
         if [ "${RUN_MODEL}" == "cloud" ]; then
             # Split CUSTOM_GEN_PATH into array of paths

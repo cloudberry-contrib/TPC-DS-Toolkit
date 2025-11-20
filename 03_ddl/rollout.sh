@@ -71,13 +71,7 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
         -v DISTRIBUTED_BY="${DISTRIBUTED_BY}"
       echo ""
     else
-      psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -q -A -t -P pager=off \
-        -f "${PWD}/${i}" \
-        -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" \
-        -v DB_EXT_SCHEMA_NAME="${DB_EXT_SCHEMA_NAME}" \
-        -v ACCESS_METHOD="${TABLE_ACCESS_METHOD}" \
-        -v STORAGE_OPTIONS="${TABLE_STORAGE_OPTIONS}" \
-        -v DISTRIBUTED_BY="${DISTRIBUTED_BY}" > /dev/null 2>&1
+      psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -q -A -t -P pager=off -f "${PWD}/${i}" -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" -v DB_EXT_SCHEMA_NAME="${DB_EXT_SCHEMA_NAME}" -v ACCESS_METHOD="${TABLE_ACCESS_METHOD}" -v STORAGE_OPTIONS="${TABLE_STORAGE_OPTIONS}" -v DISTRIBUTED_BY="${DISTRIBUTED_BY}" > /dev/null 2>&1
     fi
     print_log
   done

@@ -104,6 +104,7 @@ get_gpfdist_port
 if [ "${LOG_DEBUG}" == "true" ]; then
   log_time "gpfdist port set to: ${GPFDIST_PORT}"
 fi
+echo ""
 
 # run the benchmark
 ./rollout.sh

@@ -40,9 +40,8 @@ if [ "${LOG_DEBUG}" == "true" ]; then
   done
 
   echo "############################################################################"
-  echo ""
 fi
-
+echo ""
 # We assume that the flag variable names are consistent with the corresponding directory names
 for i in $(find ${PWD} -maxdepth 1 -type d -name "[0-9]*" | sort -n); do
   # Get just the directory name without the path
