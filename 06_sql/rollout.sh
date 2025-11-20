@@ -20,10 +20,9 @@ if [ "${DB_CURRENT_USER}" != "${BENCH_ROLE}" ]; then
 fi
 
 if [ "${RUN_QGEN}" == true ]; then
-  log_time "Generate queries based on scale"
+  log_time "Generate queries based on scale ${GEN_DATA_SCALE}"
   cd "${PWD}"
   "${PWD}/generate_queries.sh"
-  log_time "Finished generate queries based on scale"
 fi
 
 rm -f ${TPC_DS_DIR}/log/*single.explain_analyze.log

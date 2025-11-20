@@ -53,24 +53,32 @@ rm -f ${TPC_DS_DIR}/log/rollout_testing_*.log
 rm -f ${TPC_DS_DIR}/log/*multi.explain_analyze.log
 
 function generate_templates() {
-  rm -f "${PWD}"/query_*.sql
+  log_time "Generate SQL Scripts for ${MULTI_USER_COUNT} users"
 
+  rm -f "${PWD}"/query_*.sql
   #create each user's directory
   sql_dir="${PWD}"
-  echo "sql_dir: ${sql_dir}"
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    log_time "sql_dir: ${sql_dir}"
+  fi
   for i in $(seq 1 ${MULTI_USER_COUNT}); do
     sql_dir="${PWD}/${i}"
-    echo "checking for directory ${sql_dir}"
+    if [ "${LOG_DEBUG}" == "true" ]; then
+      log_time "checking for directory ${sql_dir}"
+    fi
     if [ ! -d "${sql_dir}" ]; then
-      echo "mkdir ${sql_dir}"
+      if [ "${LOG_DEBUG}" == "true" ]; then
+        log_time "mkdir ${sql_dir}"
+      fi
       mkdir "${sql_dir}"
     fi
-    echo "rm -f ${sql_dir}/*.sql"
+    if [ "${LOG_DEBUG}" == "true" ]; then
+      log_time "rm -f ${sql_dir}/*.sql"
+    fi
     rm -f "${sql_dir}"/*.sql
   done
 
   # Create queries
-  echo "cd ${PWD}"
   cd "${PWD}"
   log_time "${PWD}/dsqgen -streams ${MULTI_USER_COUNT} -input ${PWD}/query_templates/templates.lst -directory ${PWD}/query_templates -dialect cloudberry -scale ${GEN_DATA_SCALE} -RNGSEED ${RNGSEED} -verbose y -output ${PWD}"
   "${PWD}/dsqgen" -streams ${MULTI_USER_COUNT} \
@@ -80,18 +88,23 @@ function generate_templates() {
     -scale ${GEN_DATA_SCALE} \
     -RNGSEED ${RNGSEED} \
     -verbose y \
-    -output "${PWD}"
+    -output "${PWD}" 
 
   # Move query files to session directories in numerical order
   for i in $(find "${PWD}" -maxdepth 1 -type f -name "query_*.sql" -printf "%f\n" | sort -n); do
     stream_number=$(echo "${i}" | awk -F '[_.]' '{print $2}')
     # Going from base 0 to base 1
     stream_number=$((stream_number + 1))
-    echo "stream_number: ${stream_number}"
+    if [ "${LOG_DEBUG}" == "true" ]; then
+      log_time "stream_number: ${stream_number}"
+    fi
     sql_dir="${PWD}/${stream_number}"
-    echo "mv ${PWD}/${i} ${sql_dir}/"
+    if [ "${LOG_DEBUG}" == "true" ]; then
+      log_time "mv ${PWD}/${i} ${sql_dir}/"
+    fi
     mv "${PWD}/${i}" "${sql_dir}/"
   done
+  log_time "Queries have been prepared for ${MULTI_USER_COUNT} sessions."
 }
 
 if [ "${RUN_MULTI_USER_QGEN}" = "true" ]; then
@@ -121,8 +134,8 @@ echo ""
 file_count=$(get_file_count)
 
 if [ "${file_count}" -ne "${MULTI_USER_COUNT}" ]; then
-  echo "The number of successfully completed sessions, ${file_count}, is less than the ${MULTI_USER_COUNT} expected!"
-  echo "Please review the log files to determine which queries failed."
+  log_time "The number of successfully completed sessions, ${file_count}, is less than the ${MULTI_USER_COUNT} expected!"
+  log_time "Please review the log files to determine which queries failed."
   exit 1
 fi
 
