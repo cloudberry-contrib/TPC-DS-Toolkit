@@ -21,8 +21,7 @@ for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "
   if [ "${LOG_DEBUG}" == "true" ]; then
     log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -f ${PWD}/${i} -v report_schema=${report_schema}"
   fi
-  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -f "${PWD}/${i}" -v report_schema=${report_schema} > /dev/null 2>&1
-  echo ""
+  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -f "${PWD}/${i}" -v report_schema=${report_schema}
 done
 log_time "Start loading log files to ${report_schema} tables."
 # Process copy files in numeric order, using absolute paths
@@ -33,8 +32,7 @@ for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.copy.*.sql" -printf "%f\n"
   if [ "${LOG_DEBUG}" == "true" ]; then
     log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -c \"${loadsql}\""
   fi
-  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -c "${loadsql}" > /dev/null 2>&1
-  echo ""
+  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "${loadsql}"
 done
 
 log_time "Completed loading log files to ${report_schema} tables."
@@ -42,7 +40,7 @@ log_time "Completed loading log files to ${report_schema} tables."
 if [ "${LOG_DEBUG}" == "true" ]; then
   log_time "psql -t -A ${PSQL_OPTIONS} -c \"select 'analyze ' ||schemaname||'.'||tablename||';' from pg_tables WHERE schemaname = '${report_schema}';\" |xargs -I {} -P ${RUN_ANALYZE_PARALLEL} psql -q -A ${PSQL_OPTIONS} -c \"{}\""
 fi
-psql -t -A ${PSQL_OPTIONS} -c "select 'analyze ' ||schemaname||'.'||tablename||';' from pg_tables WHERE schemaname = '${report_schema}';" |xargs -I {} -P ${RUN_ANALYZE_PARALLEL} psql -q -A ${PSQL_OPTIONS} -c "{}" > /dev/null 2>&1
+psql -t -A ${PSQL_OPTIONS} -c "select 'analyze ' ||schemaname||'.'||tablename||';' from pg_tables WHERE schemaname = '${report_schema}';" |xargs -I {} -P ${RUN_ANALYZE_PARALLEL} psql -q -A ${PSQL_OPTIONS} -c "{}"
 
 log_time "Completed analyzing ${report_schema} tables."
 
