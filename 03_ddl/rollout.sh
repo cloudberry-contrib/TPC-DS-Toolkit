@@ -101,14 +101,15 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
 
       #Drop existing partition tables if they exist
       SQL_QUERY="drop table if exists ${DB_SCHEMA_NAME}.${table_name} cascade"
-      psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -q -A -t -c "${SQL_QUERY}"
       
       if [ "${LOG_DEBUG}" == "true" ]; then
+        psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -A -t -c "${SQL_QUERY}"
         log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -a -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\" -v ACCESS_METHOD=\"${TABLE_ACCESS_METHOD}\" -v STORAGE_OPTIONS=\"${TABLE_STORAGE_OPTIONS}\" -v DISTRIBUTED_BY=\"${DISTRIBUTED_BY}\""
-        psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -q -A -t -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" -v ACCESS_METHOD="${TABLE_ACCESS_METHOD}" -v STORAGE_OPTIONS="${TABLE_STORAGE_OPTIONS}" -v DISTRIBUTED_BY="${DISTRIBUTED_BY}"
+        psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -A -t -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" -v ACCESS_METHOD="${TABLE_ACCESS_METHOD}" -v STORAGE_OPTIONS="${TABLE_STORAGE_OPTIONS}" -v DISTRIBUTED_BY="${DISTRIBUTED_BY}"
         echo ""
       else
-        psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -q -A -t -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" -v ACCESS_METHOD="${TABLE_ACCESS_METHOD}" -v STORAGE_OPTIONS="${TABLE_STORAGE_OPTIONS}" -v DISTRIBUTED_BY="${DISTRIBUTED_BY}" > /dev/null 2>&1
+        psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -c "${SQL_QUERY}"
+        psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" -v ACCESS_METHOD="${TABLE_ACCESS_METHOD}" -v STORAGE_OPTIONS="${TABLE_STORAGE_OPTIONS}" -v DISTRIBUTED_BY="${DISTRIBUTED_BY}" > /dev/null 2>&1
       fi
       print_log
     done
