@@ -6,7 +6,6 @@ PWD=$(get_pwd ${BASH_SOURCE[0]})
 step="load"
 
 log_time "Step ${step} started"
-printf "\n"
 
 init_log ${step}
 
@@ -24,7 +23,9 @@ function copy_script() {
 }
 
 function stop_gpfdist() {
-  log_time "stop gpfdist on all ports"
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    log_time "stop gpfdist on all ports"
+  fi
   for i in $(cat ${TPC_DS_DIR}/segment_hosts.txt); do
     ssh -n $i "bash -c 'cd ~/; ./stop_gpfdist.sh'" &
   done
@@ -119,14 +120,18 @@ if [ "${RUN_MODEL}" == "remote" ]; then
     
     if [ -n "${found_config}" ]; then
         env_file="${CLOUDBERRY_BINARY_PATH}/${found_config}"
-        log_time "Updated environment file to: ${env_file}"
+        if [ "${LOG_DEBUG}" == "true" ]; then
+          log_time "Updated environment file to: ${env_file}"
+        fi
     else
         log_time "ERROR: No configuration files found in ${CLOUDBERRY_BINARY_PATH}"
         log_time "Searched for: ${config_files[*]}"
         exit 1
     fi
   else
-    log_time "Using environment file: ${env_file}"
+    if [ "${LOG_DEBUG}" == "true" ]; then
+      log_time "Using environment file: ${env_file}"
+    fi
   fi
   
   # Start gpfdist for each data path with different ports
@@ -178,7 +183,9 @@ elif [ "${RUN_MODEL}" == "local" ]; then
         exit 1
     fi
   else
-    log_time "Using environment file: ${env_file}"
+    if [ "${LOG_DEBUG}" == "true" ]; then
+      log_time "Using environment file: ${env_file}"
+    fi
   fi
   
   copy_script
@@ -196,6 +203,9 @@ rm -f /tmp/$$.fifo
 for ((i=0; i<${LOAD_PARALLEL}; i++)); do
     echo >&5
 done
+
+log_time "Loading tables in schema ${DB_SCHEMA_NAME} with parallelism ${LOAD_PARALLEL}"
+SECONDS=0
 
 # Use find to get just filenames, then process each file in numeric order
 for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "%f\n" | sort -n); do
@@ -272,24 +282,32 @@ wait
 # Close the file descriptor
 exec 5>&-
 
-log_time "Finished loading tables"
+log_time "Finished loading tables. Time elapsed: ${SECONDS} seconds."
 
 log_time "Starting post loading processing..."
 
 if [ "${DB_VERSION}" == "postgresql" ]; then
-  log_time "Create indexes and keys on postgresql"
-  log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -f ${PWD}/100.postgresql.indexkeys.sql -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\""
+  log_time "Create indexes and keys on PostgreSQL"
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -f ${PWD}/100.postgresql.indexkeys.sql -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\""
+  fi
   psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -f ${PWD}/100.postgresql.indexkeys.sql -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}"
   psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -c "SELECT tablename, indexname FROM pg_indexes WHERE schemaname = '${DB_SCHEMA_NAME}' ORDER BY tablename, indexname;"
 fi
 
-log_time "Clean up gpfdist"
+if [ "${LOG_DEBUG}" == "true" ]; then
+  log_time "Clean up gpfdist"
+fi
 
 if [ "${RUN_MODEL}" == "remote" ]; then
-  log_time "Clean up gpfdist on client"
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    log_time "Clean up gpfdist on client"
+  fi
   sh ${PWD}/stop_gpfdist.sh
 elif [ "${RUN_MODEL}" == "local" ]; then
-  log_time "Clean up gpfdist on all segments"
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    log_time "Clean up gpfdist on all segments"
+  fi
   stop_gpfdist
 fi
 

@@ -13,9 +13,13 @@ init_log ${step}
 if [ "${DB_CURRENT_USER}" != "${BENCH_ROLE}" ]; then
   GrantSchemaPrivileges="GRANT ALL PRIVILEGES ON SCHEMA ${DB_SCHEMA_NAME} TO ${BENCH_ROLE}"
   GrantTablePrivileges="GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA ${DB_SCHEMA_NAME} TO ${BENCH_ROLE}"
-  log_time "Grant schema privileges to role ${BENCH_ROLE}"
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    log_time "Grant schema privileges to role ${BENCH_ROLE}"
+  fi
   psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${GrantSchemaPrivileges}"
-  log_time "Grant table privileges to role ${BENCH_ROLE}"
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    log_time "Grant table privileges to role ${BENCH_ROLE}"
+  fi
   psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${GrantTablePrivileges}"
 fi
 
@@ -43,7 +47,9 @@ for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${BENCH_ROLE}.*.sql" -prin
     
     start_log
     if [ "${EXPLAIN_ANALYZE}" == "false" ]; then
-      log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -A -q -t -P pager=off -v EXPLAIN_ANALYZE=\"\" -f ${PWD}/${i} | wc -l"
+      if [ "${LOG_DEBUG}" == "true" ]; then
+        log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -A -q -t -P pager=off -v EXPLAIN_ANALYZE=\"\" -f ${PWD}/${i} | wc -l"
+      fi
       tuples=$(
         psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -A -q -t -P pager=off -v EXPLAIN_ANALYZE="" -f "${PWD}/${i}" | wc -l
         exit ${PIPESTATUS[0]}
@@ -54,7 +60,9 @@ for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${BENCH_ROLE}.*.sql" -prin
     else
       myfilename=$(basename "${i}")
       mylogfile=${TPC_DS_DIR}/log/${myfilename}.single.explain_analyze.log
-      log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -A -q -t -P pager=off -v EXPLAIN_ANALYZE=\"EXPLAIN ANALYZE\" -f ${PWD}/${i} > ${mylogfile}"
+      if [ "${LOG_DEBUG}" == "true" ]; then
+        log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -A -q -t -P pager=off -v EXPLAIN_ANALYZE=\"EXPLAIN ANALYZE\" -f ${PWD}/${i} > ${mylogfile}"
+      fi
       psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -A -q -t -P pager=off -v EXPLAIN_ANALYZE="EXPLAIN ANALYZE" -f "${PWD}/${i}" > "${mylogfile}"
       if [ $? != 0 ]; then
         tuples="-1"
