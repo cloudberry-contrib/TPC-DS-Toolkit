@@ -6,14 +6,17 @@ PWD=$(get_pwd ${BASH_SOURCE[0]})
 step="multi_user"
 
 log_time "Step ${step} started"
-printf "\n"
 
 if [ "${DB_CURRENT_USER}" != "${BENCH_ROLE}" ]; then
   GrantSchemaPrivileges="GRANT ALL PRIVILEGES ON SCHEMA ${DB_SCHEMA_NAME} TO ${BENCH_ROLE}"
   GrantTablePrivileges="GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA ${DB_SCHEMA_NAME} TO ${BENCH_ROLE}"
-  log_time "Grant schema privileges to role ${BENCH_ROLE}"
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    log_time "Grant schema privileges to role ${BENCH_ROLE}"
+  fi
   psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${GrantSchemaPrivileges}"
-  log_time "Grant table privileges to role ${BENCH_ROLE}"
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    log_time "Grant table privileges to role ${BENCH_ROLE}"
+  fi
   psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${GrantTablePrivileges}"
 fi
 # define data loding log file
@@ -54,6 +57,7 @@ rm -f ${TPC_DS_DIR}/log/*multi.explain_analyze.log
 
 function generate_templates() {
   log_time "Start generate SQL Scripts for ${MULTI_USER_COUNT} users"
+  SECONDS=0
 
   rm -f "${PWD}"/query_*.sql
   #create each user's directory
@@ -82,15 +86,10 @@ function generate_templates() {
   cd "${PWD}"
   if [ "${LOG_DEBUG}" == "true" ]; then
     log_time "dsqgen -streams ${MULTI_USER_COUNT} -input ${PWD}/query_templates/templates.lst -directory ${PWD}/query_templates -dialect cloudberry -scale ${GEN_DATA_SCALE} -RNGSEED ${RNGSEED} -verbose y -output ${PWD}"
+    "${PWD}/dsqgen" -streams ${MULTI_USER_COUNT} -input "${PWD}/query_templates/templates.lst" -directory "${PWD}/query_templates" -dialect cloudberry -scale ${GEN_DATA_SCALE} -RNGSEED ${RNGSEED} -verbose y -output "${PWD}" 
+  else
+    "${PWD}/dsqgen" -streams ${MULTI_USER_COUNT} -input "${PWD}/query_templates/templates.lst" -directory "${PWD}/query_templates" -dialect cloudberry -scale ${GEN_DATA_SCALE} -RNGSEED ${RNGSEED} -verbose y -output "${PWD}" > /dev/null 2>&1
   fi
-  "${PWD}/dsqgen" -streams ${MULTI_USER_COUNT} \
-    -input "${PWD}/query_templates/templates.lst" \
-    -directory "${PWD}/query_templates" \
-    -dialect cloudberry \
-    -scale ${GEN_DATA_SCALE} \
-    -RNGSEED ${RNGSEED} \
-    -verbose y \
-    -output "${PWD}" 
 
   # Move query files to session directories in numerical order
   for i in $(find "${PWD}" -maxdepth 1 -type f -name "query_*.sql" -printf "%f\n" | sort -n); do
@@ -107,7 +106,7 @@ function generate_templates() {
     mv "${PWD}/${i}" "${sql_dir}/"
   done
   echo ""
-  log_time "Completed generate SQL Scripts for ${MULTI_USER_COUNT} users"
+  log_time "Completed generate SQL Scripts for ${MULTI_USER_COUNT} users in ${SECONDS} seconds"
 }
 
 if [ "${RUN_MULTI_USER_QGEN}" = "true" ]; then
@@ -134,7 +133,6 @@ while [ ${running_jobs_count} -gt 0 ]; do
 done
 echo ""
 log_time "Multi-user queries completed."
-echo ""
 
 file_count=$(get_file_count)
 

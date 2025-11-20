@@ -6,7 +6,6 @@ PWD=$(get_pwd ${BASH_SOURCE[0]})
 step="sql"
 
 log_time "Step ${step} started"
-printf "\n"
 
 init_log ${step}
 
@@ -35,6 +34,8 @@ if [ "${ON_ERROR_STOP}" == 0 ]; then
   set +e
 fi
 
+log_time "Starting the Power Test."
+SECONDS=0
 # Loop through SQL files in numeric order
 for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${BENCH_ROLE}.*.sql" -printf "%f\n" | sort -n); do
   for _ in $(seq 1 ${SINGLE_USER_ITERATIONS}); do
@@ -77,6 +78,7 @@ for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${BENCH_ROLE}.*.sql" -prin
     fi
   done
 done
+log_time "Power Test finished in ${SECONDS} seconds."
 
 log_time "Step ${step} finished"
 printf "\n"

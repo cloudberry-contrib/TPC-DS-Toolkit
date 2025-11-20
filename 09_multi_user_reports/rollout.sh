@@ -14,7 +14,9 @@ filter="gpdb"
 
 multi_user_report_schema="${DB_SCHEMA_NAME}_multi_user_reports"
 
-log_time "Creating ${multi_user_report_schema} schema and tables."
+if [ "${LOG_DEBUG}" == "true" ]; then
+  log_time "Creating ${multi_user_report_schema} schema and tables."
+fi
 # Process SQL files in numeric order with absolute paths
 for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "%f\n" | sort -n); do
   if [ "${LOG_DEBUG}" == "true" ]; then
@@ -22,7 +24,9 @@ for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "
   fi
   psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -f "${PWD}/${i}" -v multi_user_report_schema=${multi_user_report_schema} > /dev/null 2>&1
 done
-log_time "Start loading log files to ${multi_user_report_schema} tables."
+if [ "${LOG_DEBUG}" == "true" ]; then
+  log_time "Start loading log files to ${multi_user_report_schema} tables."
+fi
 # Process copy files in numeric order with absolute paths
 for i in $(find "${TPC_DS_DIR}/log" -maxdepth 1 -type f -name "rollout_testing_*" -printf "%f\n" | sort -n); do
   logfile="${TPC_DS_DIR}/log/${i}"
@@ -32,10 +36,15 @@ for i in $(find "${TPC_DS_DIR}/log" -maxdepth 1 -type f -name "rollout_testing_*
   fi
   psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -c "${loadsql}"
 done
-log_time "Completed loading log files to ${multi_user_report_schema} tables."
+if [ "${LOG_DEBUG}" == "true" ]; then
+  log_time "Completed loading log files to ${multi_user_report_schema} tables."
+fi
 
 psql -t -A ${PSQL_OPTIONS} -c "select 'analyze ' ||schemaname||'.'||tablename||';' from pg_tables WHERE schemaname = '${multi_user_report_schema}';" |xargs -I {} -P ${RUN_ANALYZE_PARALLEL} psql -q -A ${PSQL_OPTIONS} -c "{}" > /dev/null 2>&1
-log_time "Completed analyzing ${multi_user_report_schema} tables."
+
+if [ "${LOG_DEBUG}" == "true" ]; then
+  log_time "Completed analyzing ${multi_user_report_schema} tables."
+fi
 
 # Generate detailed report
 log_time "Generating detailed report"

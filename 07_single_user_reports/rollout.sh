@@ -6,7 +6,6 @@ PWD=$(get_pwd ${BASH_SOURCE[0]})
 step="single_user_reports"
 
 log_time "Step ${step} started"
-printf "\n"
 
 init_log ${step}
 
@@ -15,32 +14,45 @@ report_schema="${DB_SCHEMA_NAME}_reports"
 SF=${GEN_DATA_SCALE}
 filter="gpdb"
 
-log_time "Creating ${report_schema} schema and tables."
+if [ "${LOG_DEBUG}" == "true" ]; then
+  log_time "Creating ${report_schema} schema and tables."
+fi
 # Process SQL files in numeric order, using absolute paths
 for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "%f\n" | sort -n); do
   if [ "${LOG_DEBUG}" == "true" ]; then
     log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -f ${PWD}/${i} -v report_schema=${report_schema}"
+    psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -A -f "${PWD}/${i}" -v report_schema=${report_schema} > /dev/null
+  else
+    psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -e -A -f "${PWD}/${i}" -v report_schema=${report_schema} > /dev/null 2>&1
   fi
-  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -f "${PWD}/${i}" -v report_schema=${report_schema} > /dev/null 2>&1
 done
-log_time "Start loading log files to ${report_schema} tables."
+
+if [ "${LOG_DEBUG}" == "true" ]; then
+  log_time "Start loading log files to ${report_schema} tables."
+fi
 # Process copy files in numeric order, using absolute paths
 for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.copy.*.sql" -printf "%f\n" | sort -n); do
   logstep=$(echo "${i}" | awk -F 'copy.' '{print $2}' | awk -F '.' '{print $1}')
   logfile="${TPC_DS_DIR}/log/rollout_${logstep}.log"
   loadsql="\COPY ${report_schema}.${logstep} FROM '${logfile}' WITH DELIMITER '|';"
   if [ "${LOG_DEBUG}" == "true" ]; then
-    log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -c \"${loadsql}\""
+    log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -A -c \"${loadsql}\""
+    psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -A -c "${loadsql}"
+  else
+    psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "${loadsql}"
   fi
-  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "${loadsql}"
 done
 
-log_time "Completed loading log files to ${report_schema} tables."
+if [ "${LOG_DEBUG}" == "true" ]; then
+  log_time "Completed loading log files to ${report_schema} tables."
+fi
 # psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -c "select 'analyze ' || n.nspname || '.' || c.relname || ';' from pg_class c join pg_namespace n on n.oid = c.relnamespace and n.nspname = '${report_schema}'" | psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -t -A -e
 if [ "${LOG_DEBUG}" == "true" ]; then
-  log_time "psql -t -A ${PSQL_OPTIONS} -c \"select 'analyze ' ||schemaname||'.'||tablename||';' from pg_tables WHERE schemaname = '${report_schema}';\" |xargs -I {} -P ${RUN_ANALYZE_PARALLEL} psql -q -A ${PSQL_OPTIONS} -c \"{}\""
+  log_time "psql -t -A ${PSQL_OPTIONS} -c \"select 'analyze ' ||schemaname||'.'||tablename||';' from pg_tables WHERE schemaname = '${report_schema}';\" |xargs -I {} -P ${RUN_ANALYZE_PARALLEL} psql -e -A ${PSQL_OPTIONS} -c \"{}\""
+  psql -t -A ${PSQL_OPTIONS} -c "select 'analyze ' ||schemaname||'.'||tablename||';' from pg_tables WHERE schemaname = '${report_schema}';" |xargs -I {} -P ${RUN_ANALYZE_PARALLEL} psql -e -A ${PSQL_OPTIONS} -c "{}"
+else
+  psql -t -A ${PSQL_OPTIONS} -c "select 'analyze ' ||schemaname||'.'||tablename||';' from pg_tables WHERE schemaname = '${report_schema}';" |xargs -I {} -P ${RUN_ANALYZE_PARALLEL} psql -q -A ${PSQL_OPTIONS} -c "{}"
 fi
-psql -t -A ${PSQL_OPTIONS} -c "select 'analyze ' ||schemaname||'.'||tablename||';' from pg_tables WHERE schemaname = '${report_schema}';" |xargs -I {} -P ${RUN_ANALYZE_PARALLEL} psql -q -A ${PSQL_OPTIONS} -c "{}"
 
 log_time "Completed analyzing ${report_schema} tables."
 
