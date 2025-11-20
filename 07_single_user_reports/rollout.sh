@@ -86,6 +86,5 @@ printf "1 User Queries (seconds)\t\t%d\tFor %d success queries and %d failed que
 echo ""
 echo "********************************************************************************"
 
-echo "Finished ${step}"
 log_time "Step ${step} finished"
 printf "\n"

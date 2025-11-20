@@ -88,6 +88,5 @@ printf "TDM (hours)\t\t%.3f\n" "${TDM_3_2_0}"
 printf "TLD (hours)\t\t%.3f\n" "${TLD_3_2_0}"
 printf "Score\t\t\t%d\n" "${SCORE_3_2_0}"
 
-echo "Finished ${step}"
 log_time "Step ${step} finished"
 printf "\n"

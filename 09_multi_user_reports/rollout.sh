@@ -59,6 +59,5 @@ printf "Throughput Test Elapsed Time (seconds)\t%d\tFor %d success queries and %
 printf "\n"
 echo "********************************************************************************"
 
-echo "Finished ${step}"
 log_time "Step ${step} finished"
 printf "\n"

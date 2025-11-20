@@ -128,6 +128,5 @@ fi
 
 rm -f ${TPC_DS_DIR}/log/end_testing_*.log # remove the counter log file if successful.
 
-echo "Finished ${step}"
 log_time "Step ${step} finished"
 printf "\n"

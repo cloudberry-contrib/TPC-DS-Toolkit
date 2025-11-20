@@ -60,9 +60,9 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
     fi
 
     if [ "${LOG_DEBUG}" == "true" ]; then
-      log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -t -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\" -v DB_EXT_SCHEMA_NAME=\"${DB_EXT_SCHEMA_NAME}\" -v ACCESS_METHOD=\"${TABLE_ACCESS_METHOD}\" -v STORAGE_OPTIONS=\"${TABLE_STORAGE_OPTIONS}\" -v DISTRIBUTED_BY=\"${DISTRIBUTED_BY}\""
+      log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -q -A -t -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\" -v DB_EXT_SCHEMA_NAME=\"${DB_EXT_SCHEMA_NAME}\" -v ACCESS_METHOD=\"${TABLE_ACCESS_METHOD}\" -v STORAGE_OPTIONS=\"${TABLE_STORAGE_OPTIONS}\" -v DISTRIBUTED_BY=\"${DISTRIBUTED_BY}\""
     fi
-    psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -q -t -P pager=off \
+    psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -q -A -t -P pager=off \
       -f "${PWD}/${i}" \
       -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" \
       -v DB_EXT_SCHEMA_NAME="${DB_EXT_SCHEMA_NAME}" \
@@ -71,6 +71,7 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
       -v DISTRIBUTED_BY="${DISTRIBUTED_BY}"
 
     print_log
+    echo ""
   done
 
   # Process partition files in numeric order
@@ -104,13 +105,14 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
 
       #Drop existing partition tables if they exist
       SQL_QUERY="drop table if exists ${DB_SCHEMA_NAME}.${table_name} cascade"
-      psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -c "${SQL_QUERY}"
+      psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -q -A -t -c "${SQL_QUERY}"
       
       if [ "${LOG_DEBUG}" == "true" ]; then
         log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -a -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\" -v ACCESS_METHOD=\"${TABLE_ACCESS_METHOD}\" -v STORAGE_OPTIONS=\"${TABLE_STORAGE_OPTIONS}\" -v DISTRIBUTED_BY=\"${DISTRIBUTED_BY}\""
       fi
-      psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" -v ACCESS_METHOD="${TABLE_ACCESS_METHOD}" -v STORAGE_OPTIONS="${TABLE_STORAGE_OPTIONS}" -v DISTRIBUTED_BY="${DISTRIBUTED_BY}"
+      psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -q -A -t -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" -v ACCESS_METHOD="${TABLE_ACCESS_METHOD}" -v STORAGE_OPTIONS="${TABLE_STORAGE_OPTIONS}" -v DISTRIBUTED_BY="${DISTRIBUTED_BY}"
       print_log
+      echo ""
     done
   fi
 
@@ -192,10 +194,11 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
         LOCATION+="'"
       fi
       if [ "${LOG_DEBUG}" == "true" ]; then
-        log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -t -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\" -v LOCATION=\"${LOCATION}\" -v DB_EXT_SCHEMA_NAME=\"${DB_EXT_SCHEMA_NAME}\""
+        log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -q -t -A -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\" -v LOCATION=\"${LOCATION}\" -v DB_EXT_SCHEMA_NAME=\"${DB_EXT_SCHEMA_NAME}\""
       fi
-      psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -t -q -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" -v LOCATION="${LOCATION}" -v DB_EXT_SCHEMA_NAME="${DB_EXT_SCHEMA_NAME}"
+      psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -q -t -A -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" -v LOCATION="${LOCATION}" -v DB_EXT_SCHEMA_NAME="${DB_EXT_SCHEMA_NAME}"
       print_log
+      echo ""
     done
   fi
 fi
@@ -240,6 +243,5 @@ if [ "${DB_CURRENT_USER}" != "${BENCH_ROLE}" ]; then
 
 fi
 
-echo "Finished ${step}"
 log_time "Step ${step} finished"
 printf "\n"
