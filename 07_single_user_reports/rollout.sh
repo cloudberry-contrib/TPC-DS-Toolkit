@@ -15,13 +15,13 @@ report_schema="${DB_SCHEMA_NAME}_reports"
 SF=${GEN_DATA_SCALE}
 filter="gpdb"
 
-log_time "Create ${report_schema} schema and tables."
+log_time "Creating ${report_schema} schema and tables."
 # Process SQL files in numeric order, using absolute paths
 for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "%f\n" | sort -n); do
   if [ "${LOG_DEBUG}" == "true" ]; then
     log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -f ${PWD}/${i} -v report_schema=${report_schema}"
   fi
-  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -f "${PWD}/${i}" -v report_schema=${report_schema}
+  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -t -A -f "${PWD}/${i}" -v report_schema=${report_schema} > /dev/null 2>&1
 done
 log_time "Start loading log files to ${report_schema} tables."
 # Process copy files in numeric order, using absolute paths
