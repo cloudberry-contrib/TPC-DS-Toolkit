@@ -104,6 +104,7 @@ function generate_templates() {
     fi
     mv "${PWD}/${i}" "${sql_dir}/"
   done
+  echo ""
   log_time "Queries have been prepared for ${MULTI_USER_COUNT} sessions."
 }
 
