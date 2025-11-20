@@ -98,13 +98,13 @@ for p in $(seq 1 99); do
 done
 
 # Handle special queries that contain multiple statements
-echo ""
-log_time "Processing multi-statement queries..."
+if [ "${LOG_DEBUG}" == "true" ]; then
+  log_time "Processing multi-statement queries..."
+fi
 if [ "${LOG_DEBUG}" == "true" ]; then
   log_time "The following queries contain multiple statements and require additional EXPLAIN_ANALYZE:"
   log_time "Queries: 114, 123, 124, and 139"
 fi
-echo ""
 
 arr=("114.${BENCH_ROLE}.14.sql" "123.${BENCH_ROLE}.23.sql" "124.${BENCH_ROLE}.24.sql" "139.${BENCH_ROLE}.39.sql")
 
