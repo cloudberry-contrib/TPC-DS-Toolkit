@@ -53,7 +53,7 @@ rm -f ${TPC_DS_DIR}/log/rollout_testing_*.log
 rm -f ${TPC_DS_DIR}/log/*multi.explain_analyze.log
 
 function generate_templates() {
-  log_time "Generate SQL Scripts for ${MULTI_USER_COUNT} users"
+  log_time "Start generate SQL Scripts for ${MULTI_USER_COUNT} users"
 
   rm -f "${PWD}"/query_*.sql
   #create each user's directory
@@ -80,7 +80,9 @@ function generate_templates() {
 
   # Create queries
   cd "${PWD}"
-  log_time "${PWD}/dsqgen -streams ${MULTI_USER_COUNT} -input ${PWD}/query_templates/templates.lst -directory ${PWD}/query_templates -dialect cloudberry -scale ${GEN_DATA_SCALE} -RNGSEED ${RNGSEED} -verbose y -output ${PWD}"
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    log_time "dsqgen -streams ${MULTI_USER_COUNT} -input ${PWD}/query_templates/templates.lst -directory ${PWD}/query_templates -dialect cloudberry -scale ${GEN_DATA_SCALE} -RNGSEED ${RNGSEED} -verbose y -output ${PWD}"
+  fi
   "${PWD}/dsqgen" -streams ${MULTI_USER_COUNT} \
     -input "${PWD}/query_templates/templates.lst" \
     -directory "${PWD}/query_templates" \
@@ -105,7 +107,7 @@ function generate_templates() {
     mv "${PWD}/${i}" "${sql_dir}/"
   done
   echo ""
-  log_time "Queries have been prepared for ${MULTI_USER_COUNT} sessions."
+  log_time "Completed generate SQL Scripts for ${MULTI_USER_COUNT} users"
 }
 
 if [ "${RUN_MULTI_USER_QGEN}" = "true" ]; then
@@ -114,11 +116,13 @@ fi
 
 for session_id in $(seq 1 ${MULTI_USER_COUNT}); do
   session_log="${TPC_DS_DIR}/log/testing_session_${session_id}.log"
-  log_time "${PWD}/test.sh ${session_id}"
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    log_time "${PWD}/test.sh ${session_id}"
+  fi
   ${PWD}/test.sh ${session_id} &> ${session_log} &
 done
 
-echo "Now executing queries. This may take a while."
+log_time "Now executing ${MULTI_USER_COUNT} multi-user queries. This may take a while."
 seconds=0
 echo -n "Multi-user query duration: "
 running_jobs_count=$(get_running_jobs_count)
@@ -129,7 +133,7 @@ while [ ${running_jobs_count} -gt 0 ]; do
   seconds=$((seconds + 15))
 done
 echo ""
-echo "done."
+log_time "done."
 echo ""
 
 file_count=$(get_file_count)
