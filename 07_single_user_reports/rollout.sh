@@ -53,8 +53,9 @@ if [ "${LOG_DEBUG}" == "true" ]; then
 else
   psql -t -A ${PSQL_OPTIONS} -c "select 'analyze ' ||schemaname||'.'||tablename||';' from pg_tables WHERE schemaname = '${report_schema}';" |xargs -I {} -P ${RUN_ANALYZE_PARALLEL} psql -q -A ${PSQL_OPTIONS} -c "{}"
 fi
-
-log_time "Completed analyzing ${report_schema} tables."
+if [ "${LOG_DEBUG}" == "true" ]; then
+  log_time "Completed analyzing ${report_schema} tables."
+fi
 
 echo "********************************************************************************"
 echo "Generate Data"
