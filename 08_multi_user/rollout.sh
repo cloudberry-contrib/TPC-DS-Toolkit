@@ -105,7 +105,6 @@ function generate_templates() {
     fi
     mv "${PWD}/${i}" "${sql_dir}/"
   done
-  echo ""
   log_time "Completed generate SQL Scripts for ${MULTI_USER_COUNT} users in ${SECONDS} seconds"
 }
 
