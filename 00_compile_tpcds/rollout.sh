@@ -5,7 +5,6 @@ PWD=$(get_pwd ${BASH_SOURCE[0]})
 step="compile_tpcds"
 
 log_time "Step ${step} started"
-printf "\n"
 
 init_log ${step}
 start_log
@@ -56,9 +55,17 @@ function check_binary() {
   chmod +x dsqgen
   chmod +x dsdgen
 
-  ./dsqgen -help
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    ./dsqgen -help
+  else
+    ./dsqgen -help > /dev/null 2>&1
+  
   if [ $? == 0 ]; then 
-    ./dsdgen -help
+    if [ "${LOG_DEBUG}" == "true" ]; then
+      ./dsdgen -help
+    else
+      ./dsdgen -help > /dev/null 2>&1
+    fi
     if [ $? == 0 ]; then
       compile_flag="false" 
     fi
@@ -81,7 +88,7 @@ function check_chip_type() {
   fi
 
   # Print the result for verification
-  echo "Chip type: $CHIP_TYPE"
+  log_time "Chip type: $CHIP_TYPE"
 }
 
 check_chip_type
@@ -90,7 +97,7 @@ check_binary
 if [ "${compile_flag}" == "true" ]; then
   make_tpc
 else
-  echo "Binary works, no compiling needed."
+  log_time "Binary works, no compiling needed."
 fi
 
 copy_tpc
