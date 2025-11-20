@@ -59,6 +59,7 @@ function check_binary() {
     ./dsqgen -help
   else
     ./dsqgen -help > /dev/null 2>&1
+  fi
   
   if [ $? == 0 ]; then 
     if [ "${LOG_DEBUG}" == "true" ]; then
