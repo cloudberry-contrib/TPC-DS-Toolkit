@@ -220,7 +220,7 @@ for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "
         export schema_name
         table_name=$(echo "${i}" | awk -F '.' '{print $3}')
         export table_name
-        
+
         if [ "${TRUNCATE_TABLES}" == "true" ]; then
             if [ "${LOG_DEBUG}" == "true" ]; then
               log_time "Truncate table ${DB_SCHEMA_NAME}.${table_name}"
@@ -244,7 +244,9 @@ for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "
             
             tuples=0
             for GEN_DATA_PATH in "${GEN_PATHS[@]}"; do
-                log_time "Loading data from path: ${GEN_DATA_PATH}"
+                if [ "${LOG_DEBUG}" == "true" ]; then
+                  log_time "Loading data from path: ${GEN_DATA_PATH}"
+                fi
                 for file in ${GEN_DATA_PATH}/dsbenchmark/[0-9]*/${table_name}_[0-9]*_[0-9]*.dat; do
                   if [ -e "$file" ]; then
                     if [ "${LOG_DEBUG}" == "true" ]; then
