@@ -18,9 +18,11 @@ fi
 # Process SQL files in numeric order with absolute paths
 for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "%f\n" | sort -n); do
   if [ "${LOG_DEBUG}" == "true" ]; then
-    log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -t -q -A -f ${PWD}/${i} -v multi_user_report_schema=${multi_user_report_schema}"
+    log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -A -f ${PWD}/${i} -v multi_user_report_schema=${multi_user_report_schema}"
+    psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -A -f "${PWD}/${i}" -v multi_user_report_schema=${multi_user_report_schema}
+  else
+    psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -f "${PWD}/${i}" -v multi_user_report_schema=${multi_user_report_schema} > /dev/null 2>&1
   fi
-  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -f "${PWD}/${i}" -v multi_user_report_schema=${multi_user_report_schema} > /dev/null 2>&1
 done
 if [ "${LOG_DEBUG}" == "true" ]; then
   log_time "Start loading log files to ${multi_user_report_schema} tables."
@@ -31,8 +33,11 @@ for i in $(find "${TPC_DS_DIR}/log" -maxdepth 1 -type f -name "rollout_testing_*
   loadsql="\COPY ${multi_user_report_schema}.sql FROM '${logfile}' WITH DELIMITER '|';"
   if [ "${LOG_DEBUG}" == "true" ]; then
     log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -c \"${loadsql}\""
+    psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -A -c "${loadsql}"
+  else
+    psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -c "${loadsql}"
   fi
-  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -c "${loadsql}"
+  
 done
 if [ "${LOG_DEBUG}" == "true" ]; then
   log_time "Completed loading log files to ${multi_user_report_schema} tables."
