@@ -6,7 +6,6 @@ PWD=$(get_pwd ${BASH_SOURCE[0]})
 step="ddl"
 
 log_time "Step ${step} started"
-printf "\n"
 
 init_log ${step}
 
@@ -20,6 +19,8 @@ else
 fi
 
 if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
+  log_time "Creating TPC-DS tables."
+  SECONDS=0
   # Create tables - process SQL files in numeric order
   for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.${filter}.*.sql" -printf "%f\n" | sort -n); do
     start_log
@@ -59,15 +60,13 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
       TABLE_STORAGE_OPTIONS=""
     fi
 
-    log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -a -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\" -v DB_EXT_SCHEMA_NAME=\"${DB_EXT_SCHEMA_NAME}\" -v ACCESS_METHOD=\"${TABLE_ACCESS_METHOD}\" -v STORAGE_OPTIONS=\"${TABLE_STORAGE_OPTIONS}\" -v DISTRIBUTED_BY=\"${DISTRIBUTED_BY}\""
-    psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -a -P pager=off \
-      -f "${PWD}/${i}" \
-      -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" \
-      -v DB_EXT_SCHEMA_NAME="${DB_EXT_SCHEMA_NAME}" \
-      -v ACCESS_METHOD="${TABLE_ACCESS_METHOD}" \
-      -v STORAGE_OPTIONS="${TABLE_STORAGE_OPTIONS}" \
-      -v DISTRIBUTED_BY="${DISTRIBUTED_BY}"
-
+    if [ "${LOG_DEBUG}" == "true" ]; then
+      log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -q -A -t -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\" -v DB_EXT_SCHEMA_NAME=\"${DB_EXT_SCHEMA_NAME}\" -v ACCESS_METHOD=\"${TABLE_ACCESS_METHOD}\" -v STORAGE_OPTIONS=\"${TABLE_STORAGE_OPTIONS}\" -v DISTRIBUTED_BY=\"${DISTRIBUTED_BY}\""
+      psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -A -P pager=off -f "${PWD}/${i}" -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" -v DB_EXT_SCHEMA_NAME="${DB_EXT_SCHEMA_NAME}" -v ACCESS_METHOD="${TABLE_ACCESS_METHOD}" -v STORAGE_OPTIONS="${TABLE_STORAGE_OPTIONS}" -v DISTRIBUTED_BY="${DISTRIBUTED_BY}"
+      echo ""
+    else
+      psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -P pager=off -f "${PWD}/${i}" -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" -v DB_EXT_SCHEMA_NAME="${DB_EXT_SCHEMA_NAME}" -v ACCESS_METHOD="${TABLE_ACCESS_METHOD}" -v STORAGE_OPTIONS="${TABLE_STORAGE_OPTIONS}" -v DISTRIBUTED_BY="${DISTRIBUTED_BY}" > /dev/null 2>&1
+    fi
     print_log
   done
 
@@ -102,15 +101,24 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
 
       #Drop existing partition tables if they exist
       SQL_QUERY="drop table if exists ${DB_SCHEMA_NAME}.${table_name} cascade"
-      psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -c "${SQL_QUERY}"
       
-      log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -a -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\" -v ACCESS_METHOD=\"${TABLE_ACCESS_METHOD}\" -v STORAGE_OPTIONS=\"${TABLE_STORAGE_OPTIONS}\" -v DISTRIBUTED_BY=\"${DISTRIBUTED_BY}\""
-      psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -a -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" -v ACCESS_METHOD="${TABLE_ACCESS_METHOD}" -v STORAGE_OPTIONS="${TABLE_STORAGE_OPTIONS}" -v DISTRIBUTED_BY="${DISTRIBUTED_BY}"
+      if [ "${LOG_DEBUG}" == "true" ]; then
+        psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -A -t -c "${SQL_QUERY}"
+        log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -a -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\" -v ACCESS_METHOD=\"${TABLE_ACCESS_METHOD}\" -v STORAGE_OPTIONS=\"${TABLE_STORAGE_OPTIONS}\" -v DISTRIBUTED_BY=\"${DISTRIBUTED_BY}\""
+        psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -A -t -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" -v ACCESS_METHOD="${TABLE_ACCESS_METHOD}" -v STORAGE_OPTIONS="${TABLE_STORAGE_OPTIONS}" -v DISTRIBUTED_BY="${DISTRIBUTED_BY}"
+        echo ""
+      else
+        psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -c "${SQL_QUERY}"
+        psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -A -t -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" -v ACCESS_METHOD="${TABLE_ACCESS_METHOD}" -v STORAGE_OPTIONS="${TABLE_STORAGE_OPTIONS}" -v DISTRIBUTED_BY="${DISTRIBUTED_BY}" > /dev/null 2>&1
+      fi
       print_log
     done
+    log_time "TPC-DS tables created in ${SECONDS} seconds."
   fi
 
   if [ "${RUN_MODEL}" != "cloud" ]; then
+    log_time "Creating TPC-DS external tables for loading data in non-cloud model."
+    SECONDS=0
     # Process external tables in numeric order
     for i in $(find "${PWD}" -maxdepth 1 -type f -name "*.ext_tpcds.*.sql" -printf "%f\n" | sort -n); do
       start_log
@@ -187,23 +195,33 @@ if [ "${DROP_EXISTING_TABLES}" == "true" ]; then
         done
         LOCATION+="'"
       fi
-      log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -a -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\" -v LOCATION=\"${LOCATION}\" -v DB_EXT_SCHEMA_NAME=\"${DB_EXT_SCHEMA_NAME}\""
-      psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -q -a -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" -v LOCATION="${LOCATION}" -v DB_EXT_SCHEMA_NAME="${DB_EXT_SCHEMA_NAME}"
+      if [ "${LOG_DEBUG}" == "true" ]; then
+        log_time "psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -q -t -A -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME=\"${DB_SCHEMA_NAME}\" -v LOCATION=\"${LOCATION}\" -v DB_EXT_SCHEMA_NAME=\"${DB_EXT_SCHEMA_NAME}\""
+        psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -q -t -A -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" -v LOCATION="${LOCATION}" -v DB_EXT_SCHEMA_NAME="${DB_EXT_SCHEMA_NAME}"
+        echo ""
+      else
+        psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=1 -e -q -t -A -P pager=off -f ${PWD}/${i} -v DB_SCHEMA_NAME="${DB_SCHEMA_NAME}" -v LOCATION="${LOCATION}" -v DB_EXT_SCHEMA_NAME="${DB_EXT_SCHEMA_NAME}" > /dev/null 2>&1
+      fi
       print_log
     done
+    log_time "TPC-DS external tables created in ${SECONDS} seconds."
   fi
 fi
 
 # Check if current user matches BENCH_ROLE
 if [ "${DB_CURRENT_USER}" != "${BENCH_ROLE}" ]; then
-  log_time "Current user ${DB_CURRENT_USER} does not match BENCH_ROLE ${BENCH_ROLE}."
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    log_time "Current user ${DB_CURRENT_USER} does not match BENCH_ROLE ${BENCH_ROLE}."
+  fi
   DropRoleDenp="drop owned by ${BENCH_ROLE} cascade"
   DropRole="DROP ROLE IF EXISTS ${BENCH_ROLE}"
   CreateRole="CREATE ROLE ${BENCH_ROLE}"
   GrantRole="GRANT ${BENCH_ROLE} TO ${DB_CURRENT_USER}"
   GrantSchemaPrivileges="GRANT ALL PRIVILEGES ON SCHEMA ${DB_SCHEMA_NAME} TO ${BENCH_ROLE}"
   GrantTablePrivileges="GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA ${DB_SCHEMA_NAME} TO ${BENCH_ROLE}"
-  echo "rm -f ${PWD}/GrantTablePrivileges.sql"
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    log_time "rm -f ${PWD}/GrantTablePrivileges.sql"
+  fi
   rm -f ${PWD}/GrantTablePrivileges.sql
   psql ${PSQL_OPTIONS} -tc "SELECT format('GRANT ALL PRIVILEGES ON TABLE %I.%I TO %I;', '${DB_SCHEMA_NAME}', tablename, '${BENCH_ROLE}') FROM pg_tables WHERE schemaname='${DB_SCHEMA_NAME}'" > ${PWD}/GrantTablePrivileges.sql
   # Check if role exists in PostgreSQL
@@ -212,28 +230,42 @@ if [ "${DB_CURRENT_USER}" != "${BENCH_ROLE}" ]; then
 
   # Create role if not exists
   if [ "$EXISTS" != "1" ]; then
-    echo "Role ${BENCH_ROLE} does not exist. Creating..."
-    log_time "Creating role ${BENCH_ROLE}"
+    if [ "${LOG_DEBUG}" == "true" ]; then
+      log_time "Role ${BENCH_ROLE} does not exist. Creating..."
+      log_time "Creating role ${BENCH_ROLE}"
+    fi
     psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${CreateRole}"
   else
     set +e
-    log_time "Drop role dependencies for ${BENCH_ROLE}"
+    if [ "${LOG_DEBUG}" == "true" ]; then
+      log_time "Drop role dependencies for ${BENCH_ROLE}"
+    fi
     psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${DropRoleDenp}"
     set -e
   fi
   
-  log_time "Grant role ${BENCH_ROLE} to user ${DB_CURRENT_USER}"
-  psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${GrantRole}"
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    log_time "Grant role ${BENCH_ROLE} to user ${DB_CURRENT_USER}"
+    psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -e -P pager=off -c "${GrantRole}"
+  else
+    psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${GrantRole}" > /dev/null 2>&1
+  fi
   
-  log_time "Grant schema privileges to role ${BENCH_ROLE}"
+  
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    log_time "Grant schema privileges to role ${BENCH_ROLE}"
+  fi
   psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${GrantSchemaPrivileges}"
-  log_time "Grant table privileges to role ${BENCH_ROLE}"
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    log_time "Grant table privileges to role ${BENCH_ROLE}"
+  fi
   psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -c "${GrantTablePrivileges}"
-  log_time "Grant table privileges to role ${BENCH_ROLE}"
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    log_time "Grant table privileges to role ${BENCH_ROLE}"
+  fi
   psql ${PSQL_OPTIONS} -v ON_ERROR_STOP=0 -q -P pager=off -f ${PWD}/GrantTablePrivileges.sql
 
 fi
 
-echo "Finished ${step}"
 log_time "Step ${step} finished"
 printf "\n"

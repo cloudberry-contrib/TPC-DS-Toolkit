@@ -5,7 +5,6 @@ PWD=$(get_pwd ${BASH_SOURCE[0]})
 step="compile_tpcds"
 
 log_time "Step ${step} started"
-printf "\n"
 
 init_log ${step}
 start_log
@@ -37,31 +36,6 @@ function copy_tpc() {
   cp ${TPC_DS_DIR}/00_compile_tpcds/tools/tpcds.idx ../*_sql/
   cp ${TPC_DS_DIR}/00_compile_tpcds/tools/tpcds.idx ../*_multi_user/
   cp ${TPC_DS_DIR}/00_compile_tpcds/tools/tpcds.idx ../*_gen_data/
-
-  #copy the compiled dsdgen program to the segment nodes when running in LOCAL mode
-  if [ "${RUN_MODEL}" == "local" ]; then
-    log_time "copy tpcds binaries to segment hosts"
-    log_time "RUN_MODEL is LOCAL, proceeding with copying binaries"
-    set +e  # Temporarily disable error exit to capture SSH failures
-    local ssh_failed=0
-    for i in $(cat ${TPC_DS_DIR}/segment_hosts.txt); do
-      scp tools/dsdgen tools/tpcds.idx ${i}: 2>/dev/null
-      if [ $? -ne 0 ]; then
-        log_time "Error: Failed to copy binaries to host ${i}"
-        ssh_failed=1
-      fi
-    done
-    set -e  # Restore error exit
-    
-    # If any SSH connection failed, exit the program
-    if [ $ssh_failed -eq 1 ]; then
-      log_time "[ERROR] Failed to connect to some segment hosts. Exiting."
-      log_time "Some segment hosts are not reachable, check network connection or try CLOUD mode."
-      exit 1
-    fi
-  else
-    log_time "RUN_MODEL is not LOCAL, skipping copying binaries"
-  fi
 }
 
 
@@ -81,9 +55,18 @@ function check_binary() {
   chmod +x dsqgen
   chmod +x dsdgen
 
-  ./dsqgen -help
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    ./dsqgen -help
+  else
+    ./dsqgen -help > /dev/null 2>&1
+  fi
+  
   if [ $? == 0 ]; then 
-    ./dsdgen -help
+    if [ "${LOG_DEBUG}" == "true" ]; then
+      ./dsdgen -help
+    else
+      ./dsdgen -help > /dev/null 2>&1
+    fi
     if [ $? == 0 ]; then
       compile_flag="false" 
     fi
@@ -106,7 +89,7 @@ function check_chip_type() {
   fi
 
   # Print the result for verification
-  echo "Chip type: $CHIP_TYPE"
+  log_time "Chip type: $CHIP_TYPE"
 }
 
 check_chip_type
@@ -115,7 +98,7 @@ check_binary
 if [ "${compile_flag}" == "true" ]; then
   make_tpc
 else
-  echo "Binary works, no compiling needed."
+  log_time "Binary works, no compiling needed."
 fi
 
 copy_tpc

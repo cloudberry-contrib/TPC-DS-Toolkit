@@ -8,7 +8,7 @@ env_file=${3}
 seghost=`hostname`
 
 #if [ -z "$GPHOME" ]; then
-echo "source ${env_file}"
+#echo "source ${env_file}"
 source ${env_file}
 #fi
 
@@ -18,9 +18,7 @@ pid=$!
 if [ "${pid}" -ne "0" ]; then
   sleep .4
   count=$(ps -ef 2> /dev/null | grep -v grep | awk -F ' ' '{print $2}' | grep ${pid} | wc -l)
-  if [ "${count}" -eq "1" ]; then
-    echo "Started gpfdist on port ${GPFDIST_PORT}"
-  else
+  if [ "${count}" != "1" ]; then
     echo "Unable to start gpfdist on port ${GPFDIST_PORT}"
     echo "Plese check logfile gpfdist.${GPFDIST_PORT}.log on segment host ${seghost}"
     exit 1

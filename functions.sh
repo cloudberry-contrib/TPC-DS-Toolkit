@@ -13,14 +13,13 @@ fi
 ################################################################################
 
 function check_variables() {
-  echo "############################################################################"
-  echo "Sourcing ${VARS_FILE}"
-  echo "############################################################################"
-  echo ""
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    log_time "Sourcing ${VARS_FILE}"
+  fi
   # shellcheck source=tpcds_variables.sh
   source ./${VARS_FILE} 2> /dev/null
   if [ $? -ne 0 ]; then
-    echo "./${VARS_FILE} does not exist. Please ensure that this file exists before running TPC-DS. Exiting."
+    log_time "./${VARS_FILE} does not exist. Please ensure that this file exists before running TPC-DS. Exiting."
     exit 1
   fi
 
@@ -35,35 +34,32 @@ function check_variables() {
       continue
     fi
     if [ -z "${!var}" ]; then
-      echo "ERROR: Variable '$var' is not set or is empty in ${VARS_FILE}."
+      log_time "ERROR: Variable '$var' is not set or is empty in ${VARS_FILE}."
       missing_vars+=("$var")
     fi
   done
 
   if [ ${#missing_vars[@]} -ne 0 ]; then
-    echo "The following required variables are missing or empty: ${missing_vars[*]}"
-    echo "Please check the ${VARS_FILE}, verify that the database is up and running and psql can connect to the database."
+    log_time "The following required variables are missing or empty: ${missing_vars[*]}"
+    log_time "Please check the ${VARS_FILE}, verify that the database is up and running and psql can connect to the database."
     exit 1
   fi
 }
 
 function check_admin_user() {
-  echo "############################################################################"
-  echo "Ensure ${ADMIN_USER} is executing this script."
-  echo "############################################################################"
-  echo ""
+  if [ "${LOG_DEBUG}" == "true" ]; then
+    log_time "Ensure ${ADMIN_USER} is executing this script."
+  fi
   if [ "$(whoami)" != "${ADMIN_USER}" ]; then
-    echo "Script must be executed as ${ADMIN_USER}!"
+    log_time "Script must be executed as ${ADMIN_USER}!"
     exit 1
   fi
 }
 
 function print_header() {
-  echo "############################################################################"
-  echo "ADMIN_USER: ${ADMIN_USER}"
-  echo "MULTI_USER_COUNT: ${MULTI_USER_COUNT}"
-  echo "############################################################################"
-  echo ""
+  log_time "ADMIN_USER: ${ADMIN_USER}"
+  log_time "MULTI_USER_COUNT: ${MULTI_USER_COUNT}"
+
 }
 
 # we need to declare this outside, otherwise, the declare will wipe out the
@@ -77,11 +73,11 @@ function source_bashrc() {
     source ${startup_file} || true
     # Check if GPHOME is set and not empty
     if [ -z "$GPHOME" ]; then
-      echo "Error: \$GPHOME is not found. Please set .bashrc correctly for ${ADMIN_USER} to source the database environment.Exiting."
+      log_time "Error: \$GPHOME is not found. Please set .bashrc correctly for ${ADMIN_USER} to source the database environment.Exiting."
       exit 1
     fi
   else
-    echo "Error: ${startup_file} does not exist. Please ensure that this file is correctly set before running TPC-DS. Exiting."
+    log_time "Error: ${startup_file} does not exist. Please ensure that this file is correctly set before running TPC-DS. Exiting."
     exit 1
   fi
 }
