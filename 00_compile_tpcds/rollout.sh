@@ -101,8 +101,6 @@ else
   log_time "Binary works, no compiling needed."
 fi
 
-copy_tpc
-copy_queries
 print_log
 
 log_time "Step ${step} finished"
