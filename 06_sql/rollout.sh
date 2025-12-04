@@ -9,6 +9,11 @@ log_time "Step ${step} started"
 
 init_log ${step}
 
+rm -rf ${TPC_DS_DIR}/*_sql/query_templates
+cp -R ${TPC_DS_DIR}/00_compile_tpcds/query_templates ${TPC_DS_DIR}/*_sql/
+cp ${TPC_DS_DIR}/00_compile_tpcds/tools/dsqgen ${TPC_DS_DIR}/*_sql/
+cp ${TPC_DS_DIR}/00_compile_tpcds/tools/tpcds.idx ${TPC_DS_DIR}/*_sql/
+
 if [ "${DB_CURRENT_USER}" != "${BENCH_ROLE}" ]; then
   GrantSchemaPrivileges="GRANT ALL PRIVILEGES ON SCHEMA ${DB_SCHEMA_NAME} TO ${BENCH_ROLE}"
   GrantTablePrivileges="GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA ${DB_SCHEMA_NAME} TO ${BENCH_ROLE}"
@@ -24,10 +29,6 @@ fi
 
 if [ "${RUN_QGEN}" == true ]; then
   log_time "Generate queries based on scale ${GEN_DATA_SCALE}"
-  #rm -rf ${TPC_DS_DIR}/*_sql/query_templates
-  #cp -R ${TPC_DS_DIR}/00_compile_tpcds/query_templates ${TPC_DS_DIR}/*_sql/
-  #cp ${TPC_DS_DIR}/00_compile_tpcds/tools/dsqgen ${TPC_DS_DIR}/*_sql/
-  #cp ${TPC_DS_DIR}/00_compile_tpcds/tools/tpcds.idx ${TPC_DS_DIR}/*_sql/
   cd "${PWD}"
   "${PWD}/generate_queries.sh"
 fi

@@ -34,10 +34,10 @@ fi
 rm -f ${PWD}/query_0.sql
 
 if [ "${LOG_DEBUG}" == "true" ]; then
-  log_time "${TPC_DS_DIR}/00_compile_tpcds/tools/dsqgen -input ${TPC_DS_DIR}/00_compile_tpcds/query_templates/templates.lst -directory ${TPC_DS_DIR}/00_compile_tpcds/query_templates -dialect cloudberry -scale ${GEN_DATA_SCALE} -RNGSEED ${RNGSEED} -verbose y -output ${PWD}"
-  ${TPC_DS_DIR}/00_compile_tpcds/tools/dsqgen -input ${TPC_DS_DIR}/00_compile_tpcds/query_templates/templates.lst -directory ${TPC_DS_DIR}/00_compile_tpcds/query_templates -dialect cloudberry -scale ${GEN_DATA_SCALE} -RNGSEED ${RNGSEED} -verbose y -output ${PWD}
+  log_time "${PWD}/dsqgen -input ${PWD}/query_templates/templates.lst -directory ${PWD}/query_templates -dialect cloudberry -scale ${GEN_DATA_SCALE} -RNGSEED ${RNGSEED} -verbose y -output ${PWD}"
+  ${PWD}/dsqgen -input ${PWD}/query_templates/templates.lst -directory ${PWD}/query_templates -dialect cloudberry -scale ${GEN_DATA_SCALE} -RNGSEED ${RNGSEED} -verbose y -output ${PWD}
 else
-  ${TPC_DS_DIR}/00_compile_tpcds/tools/dsqgen -input ${TPC_DS_DIR}/00_compile_tpcds/query_templates/templates.lst -directory ${TPC_DS_DIR}/00_compile_tpcds/query_templates -dialect cloudberry -scale ${GEN_DATA_SCALE} -RNGSEED ${RNGSEED} -verbose y -output ${PWD} > /dev/null 2>&1
+  ${PWD}/dsqgen -input ${PWD}/query_templates/templates.lst -directory ${PWD}/query_templates -dialect cloudberry -scale ${GEN_DATA_SCALE} -RNGSEED ${RNGSEED} -verbose y -output ${PWD} > /dev/null 2>&1
 fi
 # Clean up previous SQL files
 rm -f ${TPC_DS_DIR}/06_sql/*.${BENCH_ROLE}.*.sql*
