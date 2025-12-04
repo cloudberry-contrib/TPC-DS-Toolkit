@@ -7,11 +7,6 @@ step="multi_user"
 
 log_time "Step ${step} started"
 
-rm -rf ${TPC_DS_DIR}/*_multi_user/query_templates
-cp -R ${TPC_DS_DIR}/00_compile_tpcds/query_templates ${TPC_DS_DIR}/*_multi_user/
-cp ${TPC_DS_DIR}/00_compile_tpcds/tools/dsqgen ${TPC_DS_DIR}/*_multi_user/
-cp ${TPC_DS_DIR}/00_compile_tpcds/tools/tpcds.idx ${TPC_DS_DIR}/*_multi_user/
-
 if [ "${DB_CURRENT_USER}" != "${BENCH_ROLE}" ]; then
   GrantSchemaPrivileges="GRANT ALL PRIVILEGES ON SCHEMA ${DB_SCHEMA_NAME} TO ${BENCH_ROLE}"
   GrantTablePrivileges="GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA ${DB_SCHEMA_NAME} TO ${BENCH_ROLE}"
@@ -114,6 +109,10 @@ function generate_templates() {
 }
 
 if [ "${RUN_MULTI_USER_QGEN}" = "true" ]; then
+  rm -rf ${TPC_DS_DIR}/*_multi_user/query_templates
+  cp -R ${TPC_DS_DIR}/00_compile_tpcds/query_templates ${TPC_DS_DIR}/*_multi_user/
+  cp ${TPC_DS_DIR}/00_compile_tpcds/tools/dsqgen ${TPC_DS_DIR}/*_multi_user/
+  cp ${TPC_DS_DIR}/00_compile_tpcds/tools/tpcds.idx ${TPC_DS_DIR}/*_multi_user/
   generate_templates
 fi
 
