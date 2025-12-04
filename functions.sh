@@ -58,8 +58,13 @@ function check_admin_user() {
 
 function print_header() {
   log_time "ADMIN_USER: ${ADMIN_USER}"
+  log_time "BENCH_ROLE: ${BENCH_ROLE}"
+  log_time "PSQL_OPTIONS: ${PSQL_OPTIONS}"
+  log_time "RUN_MODEL: ${RUN_MODEL}"
+  log_time "LOG_DEBUG: ${LOG_DEBUG}"
+  log_time "GEN_DATA_SCALE: ${GEN_DATA_SCALE}"
   log_time "MULTI_USER_COUNT: ${MULTI_USER_COUNT}"
-
+  log_time "DB_SCHEMA_NAME: ${DB_SCHEMA_NAME}"
 }
 
 # we need to declare this outside, otherwise, the declare will wipe out the
