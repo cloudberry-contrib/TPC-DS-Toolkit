@@ -194,12 +194,18 @@ function gen_data() {
   fi
 }
 
+function copy_tpc() {
+  cp ${TPC_DS_DIR}/00_compile_tpcds/tools/dsdgen ${TPC_DS_DIR}/*_gen_data/
+  cp ${TPC_DS_DIR}/00_compile_tpcds/tools/tpcds.idx ${TPC_DS_DIR}/*_gen_data/
+}
+
 step="gen_data"
 
 log_time "Step ${step} started"
 
 init_log ${step}
 start_log
+copy_tpc
 schema_name="${DB_VERSION}"
 export schema_name
 table_name="gen_data"
