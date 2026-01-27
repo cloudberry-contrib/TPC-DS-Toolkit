@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 function log_time() {
   printf "[%s] %b\n" "$(date '+%Y-%m-%d %H:%M:%S %Z')" "$1"
 }
