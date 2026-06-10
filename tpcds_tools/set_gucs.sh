@@ -31,9 +31,27 @@ gpconfig -c max_prepared_transactions -v 100
 # gpconfig -c gp_dispatch_keepalives_interval -v 20
 # gpconfig -c gp_dispatch_keepalives_count -v 44
 
-# The following are for Cloudberry only
+
 gpconfig -c gp_enable_runtime_filter_pushdown -v on
 gpconfig -c gp_appendonly_insert_files -v 0
 gpconfig -c gp_interconnect_fc_method -v loss_advance
+gpconfig -c pg_gophermeta.register_gophermeta -v off
+gpconfig -c optimizer_force_split_window_function -v on
+
+# The following are for special scenarios, DONNOT enable them unless you know what you are doing
+# gpconfig -c fixeddecimal.enable_optimizer -v on
+gpconfig -c optimizer_enable_parallel_append -v on
+gpconfig -c enable_parallel -v on
+gpconfig -c max_parallel_workers_per_gather -v 2
+gpconfig -c min_parallel_table_scan_size -v 0
+gpconfig -c parallel_setup_cost -v 0
+gpconfig -c pax.enable_prefetch -v on
+gpconfig -c pax.enable_iouring -v on
+
+
+
+
+
+
 
 #psql ${PSQL_OPTIONS} -f set_resource_group.sql template1
