@@ -13,7 +13,7 @@ TPC_DS_DIR=$(get_pwd ${BASH_SOURCE[0]})
 export TPC_DS_DIR
 
 log_time "TPC-DS test started"
-log_time "TPC-DS toolkit version is: V2.4_dev20251204"
+log_time "TPC-DS toolkit version is: V2.5"
 
 # Check that pertinent variables are set in the variable file.
 check_variables
